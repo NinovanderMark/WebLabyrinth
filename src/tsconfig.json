@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "sourceMap": true,
+    "outDir": "build/"
+  },
+  "include": [
+    "*.ts"
+, "client/input.ts", "client/player.ts", "client/vector.ts", "client/game.ts"  ]
+}
