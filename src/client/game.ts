@@ -86,7 +86,10 @@ export class Game {
 
 		const newPlayerX = this.player.posX += xVel;
 		const newPlayerY = this.player.posY += yVel;
-		if ( this.worldMap[Math.floor(newPlayerX)][Math.floor(newPlayerY)] !== 0) {
+
+		// This check doesn't work, probably because I'm doing something wrong with coordinates somewhere
+		if ( newPlayerX > this.worldMap.length || newPlayerX < 0 || newPlayerY > this.worldMap[0].length || newPlayerY < 0 ||
+			this.worldMap[Math.floor(newPlayerX)][Math.floor(newPlayerY)] !== 0) {
 			return;
 		}
 
