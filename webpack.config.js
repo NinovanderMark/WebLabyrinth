@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-  devtool: "cheap-module-source-map",
+  devtool: "source-map",
   entry: "./src/index.ts",
   output: {
     path: path.resolve(__dirname, "./build"),
