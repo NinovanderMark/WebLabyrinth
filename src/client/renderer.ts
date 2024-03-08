@@ -7,11 +7,16 @@ export class Renderer {
 	canvas: HTMLCanvasElement;
 	drawContext: CanvasRenderingContext2D;
     mapVisible: boolean;
+    textures: HTMLImageElement;
 
-    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, ) {
+    texWidth = 64;
+    texHeight = 64;
+
+    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
+        this.textures = textures;
 		this.canvas = canvasElement;
 		this.canvas.width = this.screenWidth;
 		this.canvas.height = this.screenHeight;
@@ -22,6 +27,7 @@ export class Renderer {
 		}
 
 		this.drawContext = context;
+        this.drawContext.imageSmoothingEnabled = false;
     }
 
     public toggleMap() {
@@ -114,20 +120,34 @@ export class Renderer {
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / perpWallDist);
     
-            // Calculate lowest and highest pixel to fill in current stripe
-            var drawStart = -lineHeight / 2 + this.screenHeight / 2;
-            if(drawStart < 0) drawStart = 0;
-            var drawEnd = lineHeight / 2 + this.screenHeight / 2;
-            if(drawEnd >= this.screenHeight) drawEnd = this.screenHeight - 1;
+            const pitch = 0;
 
-            var color = this.getBlockColor(game.worldMap[mapY][mapX]);
-            if ( side === 1 ) { color.lightness = color.lightness / 2; }
-            this.drawContext.strokeStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
+            // Calculate lowest and highest pixel to fill in current stripe
+            const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
+            const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
+
+            var texNum = game.worldMap[mapY][mapX] - 1;
+
+            //calculate value of wallX
+            var wallX; //where exactly the wall was hit
+            if (side == 0) wallX = game.player.posY + perpWallDist * rayDirY;
+            else           wallX = game.player.posX + perpWallDist * rayDirX;
+            wallX -= Math.floor(wallX);
+
+            //x coordinate on the texture
+            var texX = wallX * this.texWidth;
+            if(side == 0 && rayDirX > 0) texX = this.texWidth - texX;
+            if(side == 1 && rayDirY < 0) texX = this.texWidth - texX;
+
+            const textureStartX = Math.floor(texX+(texNum*this.texWidth))
+            this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
+            // if ( side === 1 ) { color.lightness = color.lightness / 2; }
+            // this.drawContext.strokeStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
     
-            this.drawContext.beginPath();
-            this.drawContext.moveTo(x, drawStart);
-            this.drawContext.lineTo(x, drawEnd);
-            this.drawContext.stroke();
+            // this.drawContext.beginPath();
+            // this.drawContext.moveTo(x, drawStart);
+            // this.drawContext.lineTo(x, drawEnd);
+            // this.drawContext.stroke();
         }
     }
 
