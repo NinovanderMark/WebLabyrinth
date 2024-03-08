@@ -4,6 +4,8 @@ Web Labyrinth is a 3d Raycaster that runs in the browser. It's built using TypeS
 # How do I play this?
 The GitHub pages site for this repository has a playable demo and can be found at http://weblabyrinth.ninovandermark.nl/
 
+Alternatively, one can download one of the releases, and place the contents of the ZIP in a web host of your choice to be run from there.
+
 ## Controls
 - Use the arrow keys to move around
 - Pressing the 'M' key opens a top-down map
