@@ -104,7 +104,7 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                if (game.worldMap[mapX][mapY] > 0) hit = 1;
+                if (game.worldMap[mapY][mapX] > 0) hit = 1;
             }
     
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
@@ -120,7 +120,7 @@ export class Renderer {
             var drawEnd = lineHeight / 2 + this.screenHeight / 2;
             if(drawEnd >= this.screenHeight) drawEnd = this.screenHeight - 1;
 
-            var color = this.getBlockColor(game.worldMap[mapX][mapY]);
+            var color = this.getBlockColor(game.worldMap[mapY][mapX]);
             if ( side === 1 ) { color.lightness = color.lightness / 2; }
             this.drawContext.strokeStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
     
@@ -133,12 +133,16 @@ export class Renderer {
 
     private renderMap(game: Game) {
         const blockSize = 10;
+        this.drawContext.strokeStyle = '#f0f';
 
-        for (var x = 0; x < game.worldMap.length; x++) {
-            for (var y = 0; y < game.worldMap[x].length; y++) {
-                var color = this.getBlockColor(game.worldMap[x][y]);
+        for (var y = 0; y < game.worldMap.length; y++) {
+            for (var x = 0; x < game.worldMap[y].length; x++) {
+                var color = this.getBlockColor(game.worldMap[y][x]);
                 this.drawContext.fillStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
                 this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
+                if ( game.currentTileX === x && game.currentTileY === y) {
+                    this.drawContext.strokeRect(x*blockSize, y*blockSize, blockSize, blockSize);
+                }
             }
         }
 

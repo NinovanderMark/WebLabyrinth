@@ -36,7 +36,10 @@ module.exports = {
           },
           progress: true
       },
-      port: 1234, host: "127.0.0.1"
+      port: 1234, host: "127.0.0.1",
+      devMiddleware: {
+        writeToDisk: true,
+      },
   },
   plugins: [
     new CleanWebpackPlugin(),

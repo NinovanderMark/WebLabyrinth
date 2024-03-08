@@ -11,8 +11,8 @@ export class Player {
     constructor(x: number, y: number) {
         this.posX = x;
         this.posY = y;
-        this.direction = new Vector(-1, 0);
-        this.plane = new Vector(0, 0.66);
+        this.direction = new Vector(0, -1);
+        this.plane = new Vector(0.66, 0);
     }
 
     rotateBy(degrees: number) {

@@ -32,6 +32,9 @@ export class Game {
 	player: Player;
 	input: Input;
 	renderer: Renderer;
+	
+	currentTileX = 0;
+	currentTileY = 0;
 
 	currentTime = 0;
 	previousTime = 0;
@@ -39,7 +42,7 @@ export class Game {
 	constructor(renderer: Renderer, input: Input) {
 		this.renderer = renderer;
 		this.input = input;
-		this.player = new Player(22, 12);
+		this.player = new Player(18, 19);
 	}
 
 	/**
@@ -67,9 +70,9 @@ export class Game {
 		}
 		
 		if ( this.input.leftPressed) {
-			this.player.rotateBy(-1);
-		} else if ( this.input.rightPressed) {
 			this.player.rotateBy(1);
+		} else if ( this.input.rightPressed) {
+			this.player.rotateBy(-1);
 		}
 
 		let xVel = 0;
@@ -84,12 +87,18 @@ export class Game {
 			return;
 		}
 
-		const newPlayerX = this.player.posX += xVel;
-		const newPlayerY = this.player.posY += yVel;
+		const newPlayerX = this.player.posX + xVel;
+		const newPlayerY = this.player.posY + yVel;
 
-		// This check doesn't work, probably because I'm doing something wrong with coordinates somewhere
-		if ( newPlayerX > this.worldMap.length || newPlayerX < 0 || newPlayerY > this.worldMap[0].length || newPlayerY < 0 ||
-			this.worldMap[Math.floor(newPlayerX)][Math.floor(newPlayerY)] !== 0) {
+		// Out of bounds
+		if (newPlayerY > this.worldMap.length || newPlayerY < 0 || newPlayerX > this.worldMap[0].length || newPlayerX < 0) {
+			return;
+		}
+		this.currentTileX = Math.floor(newPlayerX);
+		this.currentTileY = Math.floor(newPlayerY);
+
+		const currentTile = this.worldMap[this.currentTileY][this.currentTileX];
+		if (currentTile !== 0 ) {
 			return;
 		}
 
