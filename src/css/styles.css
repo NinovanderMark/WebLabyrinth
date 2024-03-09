@@ -3,6 +3,10 @@ body {
 	text-align: center;
 }
 
+canvas {
+	max-width: 100%;
+}
+
 .hidden {
 	display: none;
 }
