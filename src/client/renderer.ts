@@ -141,13 +141,15 @@ export class Renderer {
 
             const textureStartX = Math.floor(texX+(texNum*this.texWidth))
             this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
+            if ( side === 1 ) { 
+                this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';
+                this.drawContext.beginPath();
+                this.drawContext.moveTo(x, drawStart);
+                this.drawContext.lineTo(x, drawEnd);
+                this.drawContext.stroke();
+            }
             // if ( side === 1 ) { color.lightness = color.lightness / 2; }
             // this.drawContext.strokeStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
-    
-            // this.drawContext.beginPath();
-            // this.drawContext.moveTo(x, drawStart);
-            // this.drawContext.lineTo(x, drawEnd);
-            // this.drawContext.stroke();
         }
     }
 
