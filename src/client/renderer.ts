@@ -139,7 +139,7 @@ export class Renderer {
             if(side == 0 && rayDirX > 0) texX = this.texWidth - texX;
             if(side == 1 && rayDirY < 0) texX = this.texWidth - texX;
 
-            const textureStartX = Math.floor(texX+(texNum*this.texWidth))
+            const textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
             this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
             if ( side === 1 ) { 
                 this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';
