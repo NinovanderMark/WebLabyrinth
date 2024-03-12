@@ -35,17 +35,29 @@ export class Renderer {
     }
 
     public render(game: Game) {
-        this.renderGame(game);
+        this.drawContext.fillStyle = "#000";
+        this.drawContext.fillRect(0,0,this.screenWidth, this.screenHeight);
+    
+        this.renderCeilingFloor(game);
+        this.renderWalls(game);
 
         if ( this.mapVisible ) {
             this.renderMap(game);
         }
     }
 
-    private renderGame(game: Game) {
-        this.drawContext.fillStyle = "#000";
-        this.drawContext.fillRect(0,0,this.screenWidth, this.screenHeight);
-    
+    private renderCeilingFloor(game: Game) {
+        // Temporary implementation
+        var ceilColor = this.getBlockColor(game.ceiling);
+        this.drawContext.fillStyle = "hsl(" + ceilColor.hue + "," + ceilColor.saturation + "%," + ceilColor.lightness/2 + "%)";
+        this.drawContext.fillRect(0, 0, this.screenWidth, this.screenHeight/2);
+
+        var floorColor = this.getBlockColor(game.floor);
+        this.drawContext.fillStyle = "hsl(" + floorColor.hue + "," + floorColor.saturation + "%," + floorColor.lightness/4 + "%)";
+        this.drawContext.fillRect(0, this.screenHeight/2, this.screenWidth, this.screenHeight/2);
+    }
+
+    private renderWalls(game: Game) {
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var rayDirX = game.player.direction.x + game.player.plane.x * cameraX;
@@ -55,22 +67,18 @@ export class Renderer {
             var mapX = Math.floor(game.player.posX);
             var mapY = Math.floor(game.player.posY);
     
-            // Length of array from current position to next X or Y-side
-            var sideDistX;
-            var sideDistY;
-    
             // Length of ray from one X or Y-side to next X or Y-side
             var deltaDistX = Math.abs(1/rayDirX);
             var deltaDistY = Math.abs(1/rayDirY);
-            var perpWallDist;
-    
+
             // What direction to step in X or Y-direction (either +1 or -1)
             var stepX;
             var stepY;
     
-            var hit = 0;
-            var side;
-    
+            // Length of array from current position to next X or Y-side
+            var sideDistX;
+            var sideDistY;
+
             // Calculate step and initial sideDist
             if (rayDirX < 0)
             {
@@ -92,6 +100,9 @@ export class Renderer {
                 stepY = 1;
                 sideDistY = (mapY + 1.0 - game.player.posY) * deltaDistY;
             }
+
+            var hit = 0;
+            var side;
     
             // Perform DDA
             while (hit === 0)
@@ -113,6 +124,8 @@ export class Renderer {
                 if (game.worldMap[mapY][mapX] > 0) hit = 1;
             }
     
+            var perpWallDist;
+
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
             if (side === 0) perpWallDist = (mapX - game.player.posX + (1 - stepX) / 2) / rayDirX;
             else           perpWallDist = (mapY - game.player.posY + (1 - stepY) / 2) / rayDirY;
@@ -148,8 +161,6 @@ export class Renderer {
                 this.drawContext.lineTo(x, drawEnd);
                 this.drawContext.stroke();
             }
-            // if ( side === 1 ) { color.lightness = color.lightness / 2; }
-            // this.drawContext.strokeStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
         }
     }
 
@@ -190,21 +201,9 @@ export class Renderer {
                 saturation = 0;
                 lightness = 0;
                 break;
-            case 1: // Red
-                hue = 0;
-                break; 
-            case 2: // Green
-                hue = 120;
-                break; 
-            case 3: // Blue
-                hue = 240;
-                break; 
-            case 4: // White
-                saturation = 0;
-                lightness = 100;
-                break; 
-            default: // Yellow
-                hue = 60;
+            
+            default:
+                hue = blockId*40;
                 break; 
         }
 

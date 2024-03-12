@@ -29,6 +29,9 @@ export class Game {
 		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
 		[4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
 
+	public ceiling = 5;
+	public floor = 2;
+
 	player: Player;
 	input: Input;
 	renderer: Renderer;
@@ -70,9 +73,9 @@ export class Game {
 		}
 		
 		if ( this.input.leftPressed) {
-			this.player.rotateBy(1);
+			this.player.rotateBy(1.5);
 		} else if ( this.input.rightPressed) {
-			this.player.rotateBy(-1);
+			this.player.rotateBy(-1.5);
 		}
 
 		let xVel = 0;
