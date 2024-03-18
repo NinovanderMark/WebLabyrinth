@@ -8,15 +8,17 @@ export class Renderer {
 	drawContext: CanvasRenderingContext2D;
     mapVisible: boolean;
     textures: HTMLImageElement;
+    sprites: HTMLImageElement;
 
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement) {
+    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement, sprites: HTMLImageElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
         this.textures = textures;
+        this.sprites = sprites;
 		this.canvas = canvasElement;
 		this.canvas.width = this.screenWidth;
 		this.canvas.height = this.screenHeight;
@@ -58,6 +60,10 @@ export class Renderer {
     }
 
     private renderWalls(game: Game) {
+        const pitch = 0;
+        var zBuffer = [];
+        zBuffer.fill(0, 0, this.screenWidth);
+
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var rayDirX = game.player.direction.x + game.player.plane.x * cameraX;
@@ -121,7 +127,7 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                if (game.worldMap[mapY][mapX] > 0) hit = 1;
+                if (game.walls[mapY][mapX] > 0) hit = 1;
             }
     
             var perpWallDist;
@@ -132,14 +138,12 @@ export class Renderer {
     
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / perpWallDist);
-    
-            const pitch = 0;
 
             // Calculate lowest and highest pixel to fill in current stripe
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            var texNum = game.worldMap[mapY][mapX] - 1;
+            var texNum = game.walls[mapY][mapX] - 1;
 
             //calculate value of wallX
             var wallX; //where exactly the wall was hit
@@ -161,6 +165,67 @@ export class Renderer {
                 this.drawContext.lineTo(x, drawEnd);
                 this.drawContext.stroke();
             }
+
+            zBuffer[x] = perpWallDist;
+        }
+
+        var spriteOrder = [];
+        var spriteDistance = [];
+        //SPRITE CASTING
+        //sort sprites from far to close
+        for(var i = 0; i < game.staticObjects.length; i++)
+        {
+            spriteOrder[i] = i;
+            spriteDistance[i] = ((game.player.posX - game.staticObjects[i].x) * (game.player.posX - game.staticObjects[i].x) + 
+                (game.player.posY - game.staticObjects[i].y) * (game.player.posY - game.staticObjects[i].y));
+        }
+
+        //sortSprites(spriteOrder, spriteDistance, numSprites);
+
+        //after sorting the sprites, do the projection and draw them
+        for(var i = 0; i < game.staticObjects.length; i++)
+        {
+            //translate sprite position to relative to camera
+            const spriteX = game.staticObjects[spriteOrder[i]].x - game.player.posX;
+            const spriteY = game.staticObjects[spriteOrder[i]].y - game.player.posY;
+
+            const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
+
+            const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
+            const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+            const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
+
+            //calculate height of the sprite on screen
+            const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
+            //calculate lowest and highest pixel to fill in current stripe
+            var drawStartY = -spriteHeight / 2 + this.screenHeight / 2;
+            if(drawStartY < 0) drawStartY = 0;
+            var drawEndY = spriteHeight / 2 + this.screenHeight / 2;
+            if(drawEndY >= this.screenHeight) drawEndY = this.screenHeight - 1;
+
+            //calculate width of the sprite
+            const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY)));
+            var drawStartX = -spriteWidth / 2 + spriteScreenX;
+            if(drawStartX < 0) drawStartX = 0;
+            var drawEndX = spriteWidth / 2 + spriteScreenX;
+            if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
+
+            //loop through every vertical stripe of the sprite on screen
+            for(var stripe = drawStartX; stripe < drawEndX; stripe++)
+            {
+                const texX = Math.floor(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth) / 256;
+                //the conditions in the if are:
+                //1) it's in front of camera plane so you don't see things behind you
+                //2) it's on the screen (left)
+                //3) it's on the screen (right)
+                //4) ZBuffer, with perpendicular distance
+                if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
+                    const spriteStartX = (game.staticObjects[i].sprite * this.texWidth) + texX;
+                    const startY = -spriteHeight + (this.screenHeight / 2) + pitch;
+                    this.drawContext.drawImage(this.sprites, spriteStartX, 0, this.texWidth, this.texHeight, stripe, startY, spriteHeight, spriteHeight);
+                }
+            }
         }
     }
 
@@ -168,9 +233,9 @@ export class Renderer {
         const blockSize = 10;
         this.drawContext.strokeStyle = '#f0f';
 
-        for (var y = 0; y < game.worldMap.length; y++) {
-            for (var x = 0; x < game.worldMap[y].length; x++) {
-                var color = this.getBlockColor(game.worldMap[y][x]);
+        for (var y = 0; y < game.walls.length; y++) {
+            for (var x = 0; x < game.walls[y].length; x++) {
+                var color = this.getBlockColor(game.walls[y][x]);
                 this.drawContext.fillStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
                 this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 if ( game.currentTileX === x && game.currentTileY === y) {
