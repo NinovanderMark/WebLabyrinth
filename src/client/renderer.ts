@@ -1,22 +1,28 @@
 import { Game } from "../client/game";
 import { Color } from "./color";
+import { StaticObject } from "./static-object";
 
 export class Renderer {
     screenWidth: number;
 	screenHeight: number;
 	canvas: HTMLCanvasElement;
+
 	drawContext: CanvasRenderingContext2D;
+    depthContext: CanvasRenderingContext2D;
     mapVisible: boolean;
     textures: HTMLImageElement;
+    sprites: HTMLImageElement;
 
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement) {
+    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement, sprites: HTMLImageElement,
+        depthBuffer?: HTMLCanvasElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
         this.textures = textures;
+        this.sprites = sprites;
 		this.canvas = canvasElement;
 		this.canvas.width = this.screenWidth;
 		this.canvas.height = this.screenHeight;
@@ -24,10 +30,14 @@ export class Renderer {
         let context = this.canvas.getContext('2d');
 		if ( context == null) {
 			throw new Error("Unable to get 2D rendering context from Canvas");
-		}
+        }
 
 		this.drawContext = context;
         this.drawContext.imageSmoothingEnabled = false;
+
+        if ( depthBuffer != null) {
+            this.depthContext = depthBuffer.getContext('2d');
+        }
     }
 
     public toggleMap() {
@@ -58,6 +68,10 @@ export class Renderer {
     }
 
     private renderWalls(game: Game) {
+        const pitch = 0;
+        var zBuffer: Array<number> = [];
+        zBuffer.fill(0, 0, this.screenWidth);
+
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var rayDirX = game.player.direction.x + game.player.plane.x * cameraX;
@@ -121,7 +135,7 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                if (game.worldMap[mapY][mapX] > 0) hit = 1;
+                if (game.walls[mapY][mapX] > 0) hit = 1;
             }
     
             var perpWallDist;
@@ -132,14 +146,12 @@ export class Renderer {
     
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / perpWallDist);
-    
-            const pitch = 0;
 
             // Calculate lowest and highest pixel to fill in current stripe
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            var texNum = game.worldMap[mapY][mapX] - 1;
+            var texNum = game.walls[mapY][mapX] - 1;
 
             //calculate value of wallX
             var wallX; //where exactly the wall was hit
@@ -161,16 +173,79 @@ export class Renderer {
                 this.drawContext.lineTo(x, drawEnd);
                 this.drawContext.stroke();
             }
+
+            zBuffer[x] = perpWallDist;
+        }
+
+        var sortedSprites: Array<StaticObject> = [...game.staticObjects];
+        sortedSprites.sort((a: StaticObject, b: StaticObject): number => {
+            return b.distanceTo(game.player.posX, game.player.posY) - a.distanceTo(game.player.posX, game.player.posY);
+        });
+
+        //after sorting the sprites, do the projection and draw them
+        for(var i = 0; i < sortedSprites.length; i++)
+        {
+            //translate sprite position to relative to camera
+            const spriteX = sortedSprites[i].x - game.player.posX;
+            const spriteY = sortedSprites[i].y - game.player.posY;
+
+            const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
+
+            const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
+            const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+            const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
+
+            //calculate height of the sprite on screen
+            const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
+
+            //calculate width of the sprite
+            const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY)));
+            var drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
+            if(drawStartX < 0) drawStartX = 0;
+            var drawEndX = spriteWidth / 2 + spriteScreenX;
+            if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
+
+            //loop through every vertical stripe of the sprite on screen
+            for(var stripe = drawStartX; stripe < drawEndX; stripe++)
+            {
+                const texX = Math.floor((stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth);
+                //the conditions in the if are:
+                //1) it's in front of camera plane so you don't see things behind you
+                //2) it's on the screen (left)
+                //3) it's on the screen (right)
+                //4) ZBuffer, with perpendicular distance
+                if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
+                    const spriteStartX = (sortedSprites[i].sprite * this.texWidth) + texX;
+                    const startY = -(spriteHeight/2) + (this.screenHeight / 2) + pitch;
+                    this.drawContext.drawImage(this.sprites, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
+                    zBuffer[stripe] = transformY;
+                }
+            }
+        }
+
+        if (this.depthContext == null) {
+            return;
+        }
+
+        var maxDepth = game.walls.length;
+        for (let x = 0; x < this.screenWidth; x++) {
+            const color = (zBuffer[x] / maxDepth) * 100;
+            this.depthContext.strokeStyle = `hsl(0, 0%, ${100-color}%)`
+            this.depthContext.beginPath();
+            this.depthContext.moveTo(x, 0);
+            this.depthContext.lineTo(x, this.screenHeight);
+            this.depthContext.stroke();
         }
     }
 
     private renderMap(game: Game) {
-        const blockSize = 10;
+        const blockSize = 8;
         this.drawContext.strokeStyle = '#f0f';
 
-        for (var y = 0; y < game.worldMap.length; y++) {
-            for (var x = 0; x < game.worldMap[y].length; x++) {
-                var color = this.getBlockColor(game.worldMap[y][x]);
+        for (var y = 0; y < game.walls.length; y++) {
+            for (var x = 0; x < game.walls[y].length; x++) {
+                var color = this.getBlockColor(game.walls[y][x]);
                 this.drawContext.fillStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
                 this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 if ( game.currentTileX === x && game.currentTileY === y) {
@@ -178,17 +253,26 @@ export class Renderer {
                 }
             }
         }
+        
+        this.drawContext.strokeStyle = '#f77';
+        game.staticObjects.forEach(o => {
+            this.drawCircle(o.x*blockSize, o.y*blockSize, blockSize/2);
+        })
 
         const playerX = game.player.posX*blockSize;
         const playerY = game.player.posY*blockSize;
         this.drawContext.strokeStyle = "#fff";
-        this.drawContext.beginPath();
-        this.drawContext.arc(playerX, playerY, blockSize/2, 0, 2 * Math.PI);
-        this.drawContext.stroke(); 
+        this.drawCircle(playerX, playerY, blockSize/2);
         this.drawContext.beginPath();
         this.drawContext.moveTo(playerX, playerY);
         this.drawContext.lineTo(playerX + game.player.direction.x*blockSize, playerY + game.player.direction.y*blockSize);
         this.drawContext.stroke();
+    }
+
+    private drawCircle(x: number, y: number, r: number) {
+        this.drawContext.beginPath();
+        this.drawContext.arc(x, y, r, 0, 2 * Math.PI);
+        this.drawContext.stroke(); 
     }
 
     private getBlockColor(blockId: number): Color {

@@ -1,9 +1,10 @@
 import { Input } from './input';
 import { Player } from './player';
 import { Renderer } from './renderer';
+import { StaticObject } from './static-object';
 
 export class Game {
-    public worldMap = [
+    public walls = [
 		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
 		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,3,0,0,0,2],
 		[4,0,0,0,0,0,0,2,2,2,2,2,2,0,0,3,0,3,3,3,0,0,0,2],
@@ -28,6 +29,14 @@ export class Game {
 		[4,4,0,0,0,0,0,0,0,0,0,4,4,4,0,0,0,0,1,0,0,0,0,2],
 		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
 		[4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+
+	public staticObjects = [
+		new StaticObject(16.5, 8.5, 0),
+		new StaticObject(18.5, 8.5, 0),
+		new StaticObject(11.5, 8.5, 1),
+		new StaticObject(19.5, 15.5, 1),
+		new StaticObject(19.5, 22.5, 1),
+	];
 
 	public ceiling = 5;
 	public floor = 2;
@@ -94,15 +103,21 @@ export class Game {
 		const newPlayerY = this.player.posY + yVel;
 
 		// Out of bounds
-		if (newPlayerY > this.worldMap.length || newPlayerY < 0 || newPlayerX > this.worldMap[0].length || newPlayerX < 0) {
+		if (newPlayerY > this.walls.length || newPlayerY < 0 || newPlayerX > this.walls[0].length || newPlayerX < 0) {
 			return;
 		}
 		this.currentTileX = Math.floor(newPlayerX);
 		this.currentTileY = Math.floor(newPlayerY);
 
-		const currentTile = this.worldMap[this.currentTileY][this.currentTileX];
+		const currentTile = this.walls[this.currentTileY][this.currentTileX];
 		if (currentTile !== 0 ) {
 			return;
+		}
+
+		for (let s = 0; s < this.staticObjects.length; s++) {
+			if ( this.staticObjects[s].distanceTo(newPlayerX, newPlayerY) <= 0.5) {
+				return;
+			}
 		}
 
 		this.player.posX = newPlayerX;
