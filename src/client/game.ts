@@ -2,6 +2,7 @@ import { Input } from './input';
 import { Player } from './player';
 import { Renderer } from './renderer';
 import { StaticObject } from './static-object';
+import { Vector } from './vector';
 
 export class Game {
     public walls = [
@@ -77,30 +78,17 @@ export class Game {
 			this.input.clearQueue();
 		}
 
-		if ( !this.input.anyDirectional() ) {
+		if ( !this.input.anyDirectional() && this.input.mouseDragStart == null ) {
 			return;
 		}
 		
-		if ( this.input.leftPressed) {
-			this.player.rotateBy(1.5);
-		} else if ( this.input.rightPressed) {
-			this.player.rotateBy(-1.5);
-		}
-
-		let xVel = 0;
-		let yVel = 0;
-		if ( this.input.upPressed ) {
-			yVel += this.player.direction.y * this.player.movementSpeed;
-			xVel += this.player.direction.x * this.player.movementSpeed;
-		} else if (this.input.downPressed) {
-			yVel -= this.player.direction.y * this.player.movementSpeed;
-			xVel -= this.player.direction.x * this.player.movementSpeed;
-		} else {
+		var movement = this.getMovementFromInput();
+		if ( movement.x === 0 && movement.y === 0) {
 			return;
 		}
 
-		const newPlayerX = this.player.posX + xVel;
-		const newPlayerY = this.player.posY + yVel;
+		const newPlayerX = this.player.posX + movement.x;
+		const newPlayerY = this.player.posY + movement.y;
 
 		// Out of bounds
 		if (newPlayerY > this.walls.length || newPlayerY < 0 || newPlayerX > this.walls[0].length || newPlayerX < 0) {
@@ -122,5 +110,37 @@ export class Game {
 
 		this.player.posX = newPlayerX;
 		this.player.posY = newPlayerY;
+	}
+
+	private getMovementFromInput(): Vector {
+		if ( this.input.leftPressed) {
+			this.player.rotateBy(1.5);
+		} else if ( this.input.rightPressed) {
+			this.player.rotateBy(-1.5);
+		}
+
+		let xVel = 0;
+		let yVel = 0;
+		if ( this.input.upPressed ) {
+			yVel += this.player.direction.y * this.player.movementSpeed;
+			xVel += this.player.direction.x * this.player.movementSpeed;
+		} else if (this.input.downPressed) {
+			yVel -= this.player.direction.y * this.player.movementSpeed;
+			xVel -= this.player.direction.x * this.player.movementSpeed;
+		} 
+
+		if ( this.input.mouseDragStart != null) {
+			this.player.rotateBy((this.input.mouseDragStart.x - this.input.mousePosition.x)*0.01);
+			const forward = (this.input.mouseDragStart.y - this.input.mousePosition.y);
+			if ( forward > 0.01 ) {
+				yVel = this.player.direction.y * Math.min(forward, this.player.movementSpeed)
+				xVel = this.player.direction.x * Math.min(forward, this.player.movementSpeed)
+			} else if (forward < -0.01) {
+				yVel = this.player.direction.y * Math.max(forward, -this.player.movementSpeed)
+				xVel = this.player.direction.x * Math.max(forward, -this.player.movementSpeed)
+			}
+		}
+
+		return new Vector(xVel, yVel);
 	}
 };
