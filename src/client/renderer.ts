@@ -1,11 +1,14 @@
 import { Game } from "../client/game";
 import { Color } from "./color";
+import { StaticObject } from "./static-object";
 
 export class Renderer {
     screenWidth: number;
 	screenHeight: number;
 	canvas: HTMLCanvasElement;
+
 	drawContext: CanvasRenderingContext2D;
+    depthContext: CanvasRenderingContext2D;
     mapVisible: boolean;
     textures: HTMLImageElement;
     sprites: HTMLImageElement;
@@ -13,7 +16,8 @@ export class Renderer {
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement, sprites: HTMLImageElement) {
+    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement, sprites: HTMLImageElement,
+        depthBuffer?: HTMLCanvasElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
@@ -26,10 +30,14 @@ export class Renderer {
         let context = this.canvas.getContext('2d');
 		if ( context == null) {
 			throw new Error("Unable to get 2D rendering context from Canvas");
-		}
+        }
 
 		this.drawContext = context;
         this.drawContext.imageSmoothingEnabled = false;
+
+        if ( depthBuffer != null) {
+            this.depthContext = depthBuffer.getContext('2d');
+        }
     }
 
     public toggleMap() {
@@ -61,7 +69,7 @@ export class Renderer {
 
     private renderWalls(game: Game) {
         const pitch = 0;
-        var zBuffer = [];
+        var zBuffer: Array<number> = [];
         zBuffer.fill(0, 0, this.screenWidth);
 
         for(var x = 0; x < this.screenWidth; x++) {
@@ -169,25 +177,17 @@ export class Renderer {
             zBuffer[x] = perpWallDist;
         }
 
-        var spriteOrder = [];
-        var spriteDistance = [];
-        //SPRITE CASTING
-        //sort sprites from far to close
-        for(var i = 0; i < game.staticObjects.length; i++)
-        {
-            spriteOrder[i] = i;
-            spriteDistance[i] = ((game.player.posX - game.staticObjects[i].x) * (game.player.posX - game.staticObjects[i].x) + 
-                (game.player.posY - game.staticObjects[i].y) * (game.player.posY - game.staticObjects[i].y));
-        }
-
-        //sortSprites(spriteOrder, spriteDistance, numSprites);
+        var sortedSprites: Array<StaticObject> = [...game.staticObjects];
+        sortedSprites.sort((a: StaticObject, b: StaticObject): number => {
+            return b.distanceTo(game.player.posX, game.player.posY) - a.distanceTo(game.player.posX, game.player.posY);
+        });
 
         //after sorting the sprites, do the projection and draw them
-        for(var i = 0; i < game.staticObjects.length; i++)
+        for(var i = 0; i < sortedSprites.length; i++)
         {
             //translate sprite position to relative to camera
-            const spriteX = game.staticObjects[spriteOrder[i]].x - game.player.posX;
-            const spriteY = game.staticObjects[spriteOrder[i]].y - game.player.posY;
+            const spriteX = sortedSprites[i].x - game.player.posX;
+            const spriteY = sortedSprites[i].y - game.player.posY;
 
             const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
 
@@ -198,15 +198,10 @@ export class Renderer {
 
             //calculate height of the sprite on screen
             const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
-            //calculate lowest and highest pixel to fill in current stripe
-            var drawStartY = -spriteHeight / 2 + this.screenHeight / 2;
-            if(drawStartY < 0) drawStartY = 0;
-            var drawEndY = spriteHeight / 2 + this.screenHeight / 2;
-            if(drawEndY >= this.screenHeight) drawEndY = this.screenHeight - 1;
 
             //calculate width of the sprite
             const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY)));
-            var drawStartX = -spriteWidth / 2 + spriteScreenX;
+            var drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
             if(drawStartX < 0) drawStartX = 0;
             var drawEndX = spriteWidth / 2 + spriteScreenX;
             if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
@@ -214,23 +209,38 @@ export class Renderer {
             //loop through every vertical stripe of the sprite on screen
             for(var stripe = drawStartX; stripe < drawEndX; stripe++)
             {
-                const texX = Math.floor(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth) / 256;
+                const texX = Math.floor((stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth);
                 //the conditions in the if are:
                 //1) it's in front of camera plane so you don't see things behind you
                 //2) it's on the screen (left)
                 //3) it's on the screen (right)
                 //4) ZBuffer, with perpendicular distance
                 if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
-                    const spriteStartX = (game.staticObjects[i].sprite * this.texWidth) + texX;
-                    const startY = -spriteHeight + (this.screenHeight / 2) + pitch;
-                    this.drawContext.drawImage(this.sprites, spriteStartX, 0, this.texWidth, this.texHeight, stripe, startY, spriteHeight, spriteHeight);
+                    const spriteStartX = (sortedSprites[i].sprite * this.texWidth) + texX;
+                    const startY = -(spriteHeight/2) + (this.screenHeight / 2) + pitch;
+                    this.drawContext.drawImage(this.sprites, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
+                    zBuffer[stripe] = transformY;
                 }
             }
+        }
+
+        if (this.depthContext == null) {
+            return;
+        }
+
+        var maxDepth = game.walls.length;
+        for (let x = 0; x < this.screenWidth; x++) {
+            const color = (zBuffer[x] / maxDepth) * 100;
+            this.depthContext.strokeStyle = `hsl(0, 0%, ${100-color}%)`
+            this.depthContext.beginPath();
+            this.depthContext.moveTo(x, 0);
+            this.depthContext.lineTo(x, this.screenHeight);
+            this.depthContext.stroke();
         }
     }
 
     private renderMap(game: Game) {
-        const blockSize = 10;
+        const blockSize = 8;
         this.drawContext.strokeStyle = '#f0f';
 
         for (var y = 0; y < game.walls.length; y++) {
@@ -243,17 +253,26 @@ export class Renderer {
                 }
             }
         }
+        
+        this.drawContext.strokeStyle = '#f77';
+        game.staticObjects.forEach(o => {
+            this.drawCircle(o.x*blockSize, o.y*blockSize, blockSize/2);
+        })
 
         const playerX = game.player.posX*blockSize;
         const playerY = game.player.posY*blockSize;
         this.drawContext.strokeStyle = "#fff";
-        this.drawContext.beginPath();
-        this.drawContext.arc(playerX, playerY, blockSize/2, 0, 2 * Math.PI);
-        this.drawContext.stroke(); 
+        this.drawCircle(playerX, playerY, blockSize/2);
         this.drawContext.beginPath();
         this.drawContext.moveTo(playerX, playerY);
         this.drawContext.lineTo(playerX + game.player.direction.x*blockSize, playerY + game.player.direction.y*blockSize);
         this.drawContext.stroke();
+    }
+
+    private drawCircle(x: number, y: number, r: number) {
+        this.drawContext.beginPath();
+        this.drawContext.arc(x, y, r, 0, 2 * Math.PI);
+        this.drawContext.stroke(); 
     }
 
     private getBlockColor(blockId: number): Color {

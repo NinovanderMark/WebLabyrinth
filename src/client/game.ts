@@ -31,9 +31,9 @@ export class Game {
 		[4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
 
 	public staticObjects = [
-		new StaticObject(14, 7, 0),
-		new StaticObject(16, 7, 0),
-		new StaticObject(18, 7, 0)
+		new StaticObject(16.5, 8.5, 0),
+		new StaticObject(18.5, 8.5, 0),
+		new StaticObject(21.5, 10.5, 0)
 	];
 
 	public ceiling = 5;
@@ -110,6 +110,12 @@ export class Game {
 		const currentTile = this.walls[this.currentTileY][this.currentTileX];
 		if (currentTile !== 0 ) {
 			return;
+		}
+
+		for (let s = 0; s < this.staticObjects.length; s++) {
+			if ( this.staticObjects[s].distanceTo(newPlayerX, newPlayerY) <= 0.5) {
+				return;
+			}
 		}
 
 		this.player.posX = newPlayerX;
