@@ -33,7 +33,9 @@ export class Game {
 	public staticObjects = [
 		new StaticObject(16.5, 8.5, 0),
 		new StaticObject(18.5, 8.5, 0),
-		new StaticObject(21.5, 10.5, 0)
+		new StaticObject(11.5, 8.5, 1),
+		new StaticObject(19.5, 15.5, 1),
+		new StaticObject(19.5, 22.5, 1),
 	];
 
 	public ceiling = 5;
