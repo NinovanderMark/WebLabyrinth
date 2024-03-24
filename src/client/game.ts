@@ -17,10 +17,10 @@ export class Game {
 		[4,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,2],
 		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
 		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,1,0,0,1,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,1,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,1,0,0,0,0,0,5,5,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,1,1,1,1,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,2],
+		[4,0,6,6,0,6,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,2],
+		[4,0,6,0,0,6,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,2],
+		[4,0,0,0,0,6,0,0,0,0,0,5,5,0,0,5,0,0,0,0,0,0,0,2],
+		[4,0,6,6,6,6,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,2],
 		[4,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0,0,1,0,0,1,1,2],
 		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
 		[4,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,1,0,0,1,1,2],
@@ -131,7 +131,7 @@ export class Game {
 
 		if ( this.input.mouseDragStart != null) {
 			this.player.rotateBy((this.input.mouseDragStart.x - this.input.mousePosition.x)*0.01);
-			const forward = (this.input.mouseDragStart.y - this.input.mousePosition.y);
+			const forward = (this.input.mouseDragStart.y - this.input.mousePosition.y) * 0.0005;
 			if ( forward > 0.01 ) {
 				yVel = this.player.direction.y * Math.min(forward, this.player.movementSpeed)
 				xVel = this.player.direction.x * Math.min(forward, this.player.movementSpeed)
