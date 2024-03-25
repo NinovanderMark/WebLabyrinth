@@ -102,7 +102,7 @@ export class Renderer {
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1.0 - game.player.posX) * deltaDistX;
+                sideDistX = (mapX + 1 - game.player.posX) * deltaDistX;
             }
             if (rayDirY < 0)
             {
@@ -112,7 +112,7 @@ export class Renderer {
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1.0 - game.player.posY) * deltaDistY;
+                sideDistY = (mapY + 1 - game.player.posY) * deltaDistY;
             }
 
             var hit = 0;
@@ -135,7 +135,9 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                if (game.walls[mapY][mapX] > 0) hit = 1;
+                if (game.walls[mapY][mapX] > 0) {
+                    hit = 1;
+                }
             }
     
             var perpWallDist;
@@ -177,52 +179,13 @@ export class Renderer {
             zBuffer[x] = perpWallDist;
         }
 
+        // Sort from farthest to closest
         var sortedSprites: Array<StaticObject> = [...game.staticObjects];
         sortedSprites.sort((a: StaticObject, b: StaticObject): number => {
             return b.distanceTo(game.player.posX, game.player.posY) - a.distanceTo(game.player.posX, game.player.posY);
         });
 
-        //after sorting the sprites, do the projection and draw them
-        for(var i = 0; i < sortedSprites.length; i++)
-        {
-            //translate sprite position to relative to camera
-            const spriteX = sortedSprites[i].x - game.player.posX;
-            const spriteY = sortedSprites[i].y - game.player.posY;
-
-            const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
-
-            const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
-            const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
-
-            const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
-
-            //calculate height of the sprite on screen
-            const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
-
-            //calculate width of the sprite
-            const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY)));
-            var drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
-            if(drawStartX < 0) drawStartX = 0;
-            var drawEndX = spriteWidth / 2 + spriteScreenX;
-            if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
-
-            //loop through every vertical stripe of the sprite on screen
-            for(var stripe = drawStartX; stripe < drawEndX; stripe++)
-            {
-                const texX = Math.floor((stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth);
-                //the conditions in the if are:
-                //1) it's in front of camera plane so you don't see things behind you
-                //2) it's on the screen (left)
-                //3) it's on the screen (right)
-                //4) ZBuffer, with perpendicular distance
-                if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
-                    const spriteStartX = (sortedSprites[i].sprite * this.texWidth) + texX;
-                    const startY = -(spriteHeight/2) + (this.screenHeight / 2) + pitch;
-                    this.drawContext.drawImage(this.sprites, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
-                    zBuffer[stripe] = transformY;
-                }
-            }
-        }
+        sortedSprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch));
 
         if (this.depthContext == null) {
             return;
@@ -236,6 +199,45 @@ export class Renderer {
             this.depthContext.moveTo(x, 0);
             this.depthContext.lineTo(x, this.screenHeight);
             this.depthContext.stroke();
+        }
+    }
+
+    private renderSpriteBillboard(sprite: StaticObject, game: Game, zBuffer: Array<number>, pitch: number) {
+        const spriteX = sprite.x - game.player.posX;
+        const spriteY = sprite.y - game.player.posY;
+
+        const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
+
+        const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
+        const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+        const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
+
+        //calculate height of the sprite on screen
+        const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
+
+        //calculate width of the sprite
+        const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY)));
+        var drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
+        if(drawStartX < 0) drawStartX = 0;
+        var drawEndX = spriteWidth / 2 + spriteScreenX;
+        if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
+
+        //loop through every vertical stripe of the sprite on screen
+        for(var stripe = drawStartX; stripe < drawEndX; stripe++)
+        {
+            const texX = Math.floor((stripe - (-spriteWidth / 2 + spriteScreenX)) * this.texWidth / spriteWidth);
+            //the conditions in the if are:
+            //1) it's in front of camera plane so you don't see things behind you
+            //2) it's on the screen (left)
+            //3) it's on the screen (right)
+            //4) ZBuffer, with perpendicular distance
+            if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
+                const spriteStartX = (sprite.sprite * this.texWidth) + texX;
+                const startY = -(spriteHeight/2) + (this.screenHeight / 2) + pitch;
+                this.drawContext.drawImage(this.sprites, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
+                zBuffer[stripe] = transformY;
+            }
         }
     }
 
