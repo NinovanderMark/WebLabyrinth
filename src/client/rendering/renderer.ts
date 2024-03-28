@@ -1,6 +1,7 @@
-import { Game } from "../client/game";
-import { Color } from "./color";
-import { StaticObject } from "./static-object";
+import { Game } from "../game";
+import { Color } from "../color";
+import { Sprite } from "../world/sprite";
+import { ViewSprite } from "./view-sprite";
 
 export class Renderer {
     screenWidth: number;
@@ -58,19 +59,20 @@ export class Renderer {
 
     private renderCeilingFloor(game: Game) {
         // Temporary implementation
-        var ceilColor = this.getBlockColor(game.ceiling);
+        var ceilColor = this.getBlockColor(game.world.ceiling);
         this.drawContext.fillStyle = "hsl(" + ceilColor.hue + "," + ceilColor.saturation + "%," + ceilColor.lightness/2 + "%)";
         this.drawContext.fillRect(0, 0, this.screenWidth, this.screenHeight/2);
 
-        var floorColor = this.getBlockColor(game.floor);
+        var floorColor = this.getBlockColor(game.world.floor);
         this.drawContext.fillStyle = "hsl(" + floorColor.hue + "," + floorColor.saturation + "%," + floorColor.lightness/4 + "%)";
         this.drawContext.fillRect(0, this.screenHeight/2, this.screenWidth, this.screenHeight/2);
     }
 
     private renderWalls(game: Game) {
         const pitch = 0;
-        var zBuffer: Array<number> = [];
+        const zBuffer: Array<number> = [];
         zBuffer.fill(0, 0, this.screenWidth);
+        const sprites: Array<ViewSprite> = [];
 
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
@@ -117,7 +119,8 @@ export class Renderer {
 
             var hit = 0;
             var side;
-    
+            var texNum;
+            
             // Perform DDA
             while (hit === 0)
             {
@@ -135,7 +138,17 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                if (game.walls[mapY][mapX] > 0) {
+                const worldObject = game.world.objects[mapY][mapX];
+                if ( worldObject == null) continue;
+
+                if ( worldObject instanceof Sprite ) {
+                    var viewSprite = new ViewSprite(mapX+0.5, mapY+0.5, worldObject.texture);
+                    if ( sprites.findIndex(v => v.x === viewSprite.x && v.y === viewSprite.y) < 0) {
+                        sprites.push(viewSprite);
+                    }
+                    continue;
+                } else {
+                    texNum = worldObject.texture;
                     hit = 1;
                 }
             }
@@ -152,8 +165,6 @@ export class Renderer {
             // Calculate lowest and highest pixel to fill in current stripe
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
-
-            var texNum = game.walls[mapY][mapX] - 1;
 
             //calculate value of wallX
             var wallX; //where exactly the wall was hit
@@ -180,18 +191,17 @@ export class Renderer {
         }
 
         // Sort from farthest to closest
-        var sortedSprites: Array<StaticObject> = [...game.staticObjects];
-        sortedSprites.sort((a: StaticObject, b: StaticObject): number => {
+        sprites.sort((a: ViewSprite, b: ViewSprite): number => {
             return b.distanceTo(game.player.posX, game.player.posY) - a.distanceTo(game.player.posX, game.player.posY);
         });
 
-        sortedSprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch));
+        sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch));
 
         if (this.depthContext == null) {
             return;
         }
 
-        var maxDepth = game.walls.length;
+        var maxDepth = game.world.objects.length;
         for (let x = 0; x < this.screenWidth; x++) {
             const color = (zBuffer[x] / maxDepth) * 100;
             this.depthContext.strokeStyle = `hsl(0, 0%, ${100-color}%)`
@@ -202,7 +212,7 @@ export class Renderer {
         }
     }
 
-    private renderSpriteBillboard(sprite: StaticObject, game: Game, zBuffer: Array<number>, pitch: number) {
+    private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number) {
         const spriteX = sprite.x - game.player.posX;
         const spriteY = sprite.y - game.player.posY;
 
@@ -243,23 +253,28 @@ export class Renderer {
 
     private renderMap(game: Game) {
         const blockSize = 8;
-        this.drawContext.strokeStyle = '#f0f';
+        
 
-        for (var y = 0; y < game.walls.length; y++) {
-            for (var x = 0; x < game.walls[y].length; x++) {
-                var color = this.getBlockColor(game.walls[y][x]);
+        for (var y = 0; y < game.world.objects.length; y++) {
+            for (var x = 0; x < game.world.objects[y].length; x++) {
+                const obj = game.world.objects[y][x];
+                if ( obj == null) continue;
+
+                var color = this.getBlockColor(obj.texture+1);
                 this.drawContext.fillStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
-                this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
+                if ( obj instanceof Sprite ) {
+                    this.drawContext.strokeStyle = '#f77';
+                    this.drawCircle((x+0.5)*blockSize, (y+0.5)*blockSize, blockSize/2);
+                } else {
+                    this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
+                }
+                
                 if ( game.currentTileX === x && game.currentTileY === y) {
+                    this.drawContext.strokeStyle = '#f0f';
                     this.drawContext.strokeRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 }
             }
         }
-        
-        this.drawContext.strokeStyle = '#f77';
-        game.staticObjects.forEach(o => {
-            this.drawCircle(o.x*blockSize, o.y*blockSize, blockSize/2);
-        })
 
         const playerX = game.player.posX*blockSize;
         const playerY = game.player.posY*blockSize;

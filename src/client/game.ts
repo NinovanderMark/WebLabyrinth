@@ -1,46 +1,13 @@
 import { Input } from './input';
 import { Player } from './player';
-import { Renderer } from './renderer';
-import { StaticObject } from './static-object';
+import { Renderer } from './rendering/renderer';
+import { World } from './world/world';
 import { Vector } from './vector';
 
 export class Game {
-    public walls = [
-		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,3,0,0,0,2],
-		[4,0,0,0,0,0,0,2,2,2,2,2,2,0,0,3,0,3,3,3,0,0,0,2],
-		[4,0,3,3,0,0,0,2,0,0,0,0,2,0,0,0,0,0,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,2,0,2,2,0,2,0,0,3,3,3,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,0,0,0,2,0,2,0,0,3,0,0,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,0,0,0,0,0,2,0,0,3,0,3,3,3,0,0,0,2],
-		[4,0,0,0,0,0,2,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,6,6,0,6,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,2],
-		[4,0,6,0,0,6,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,6,0,0,0,0,0,5,5,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,6,6,6,6,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0,0,1,0,0,1,1,2],
-		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,4,0,0,0,0,4,0,0,0,0,4,0,0,0,0,1,0,0,1,1,2],
-		[4,4,0,0,0,0,5,0,4,4,0,4,4,4,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,1,0,0,1,1,2],
-		[4,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,0,0,0,0,0,0,0,0,4,4,4,0,0,0,0,1,0,0,0,0,2],
-		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+	public readonly textureLimit: number = 16;
 
-	public staticObjects = [
-		new StaticObject(16.5, 8.5, 0),
-		new StaticObject(18.5, 8.5, 0),
-		new StaticObject(11.5, 8.5, 1),
-		new StaticObject(19.5, 15.5, 1),
-		new StaticObject(19.5, 22.5, 1),
-	];
-
-	public ceiling = 5;
-	public floor = 2;
+    public world: World;
 
 	player: Player;
 	input: Input;
@@ -56,6 +23,10 @@ export class Game {
 		this.renderer = renderer;
 		this.input = input;
 		this.player = new Player(17, 19);
+	}
+
+	public load(json: any) {
+		this.world = World.from(json as number[][], this.textureLimit);
 	}
 
 	/**
@@ -91,21 +62,15 @@ export class Game {
 		const newPlayerY = this.player.posY + movement.y;
 
 		// Out of bounds
-		if (newPlayerY > this.walls.length || newPlayerY < 0 || newPlayerX > this.walls[0].length || newPlayerX < 0) {
+		if (newPlayerY > this.world.objects.length || newPlayerY < 0 || newPlayerX > this.world.objects[0].length || newPlayerX < 0) {
 			return;
 		}
 		this.currentTileX = Math.floor(newPlayerX);
 		this.currentTileY = Math.floor(newPlayerY);
 
-		const currentTile = this.walls[this.currentTileY][this.currentTileX];
-		if (currentTile !== 0 ) {
+		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
+		if (currentTile != null ) {
 			return;
-		}
-
-		for (let s = 0; s < this.staticObjects.length; s++) {
-			if ( this.staticObjects[s].distanceTo(newPlayerX, newPlayerY) <= 0.5) {
-				return;
-			}
 		}
 
 		this.player.posX = newPlayerX;
