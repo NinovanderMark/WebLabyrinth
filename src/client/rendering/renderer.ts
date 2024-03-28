@@ -2,6 +2,7 @@ import { Game } from "../game";
 import { Color } from "../color";
 import { Sprite } from "../world/sprite";
 import { ViewSprite } from "./view-sprite";
+import { Door } from "../world/door";
 
 export class Renderer {
     screenWidth: number;
@@ -118,6 +119,8 @@ export class Renderer {
             }
 
             var hit = 0;
+            var wallXOffset = 0;
+	        var wallYOffset = 0;
             var side;
             var texNum;
             
@@ -147,6 +150,42 @@ export class Renderer {
                         sprites.push(viewSprite);
                     }
                     continue;
+                } else if ( worldObject instanceof Door) {
+                    texNum = worldObject.texture;
+                    hit = 1;
+                    if (side == 1) {
+                        wallYOffset = 0.5 * stepY;
+                        perpWallDist = (mapY - game.player.posY + wallYOffset + (1 - stepY) / 2) / rayDirY;
+                        wallX = game.player.posX + perpWallDist * rayDirX;
+                        wallX -= Math.floor(wallX);
+                        if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
+                            if (!worldObject.closed && 1.0 - wallX <= worldObject.openAmount){
+                                hit = 0; //Continue raycast for open/opening doors
+                                wallYOffset = 0;
+                            }
+                        } else {
+                            mapX += stepX;
+                            side = 0;
+                            //rayTex = 4; //Draw door frame instead
+                            wallYOffset = 0;
+                        }
+                    } else { //side == 0
+                        wallXOffset = 0.5 * stepX;
+                        perpWallDist  = (mapX - game.player.posX + wallXOffset + (1 - stepX) / 2) / rayDirX;
+                        wallX = game.player.posY + perpWallDist * rayDirY;
+                        wallX -= Math.floor(wallX);
+                        if (sideDistX - (deltaDistX/2) < sideDistY) {
+                            if (!worldObject.closed && 1.0 - wallX < worldObject.openAmount) {
+                                hit = 0;
+                                wallXOffset = 0;
+                            }
+                        } else {
+                            mapY += stepY;
+                            side = 1;
+                            //rayTex = 4;
+                            wallXOffset = 0;
+                        }
+                    }
                 } else {
                     texNum = worldObject.texture;
                     hit = 1;
@@ -156,8 +195,8 @@ export class Renderer {
             var perpWallDist;
 
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-            if (side === 0) perpWallDist = (mapX - game.player.posX + (1 - stepX) / 2) / rayDirX;
-            else           perpWallDist = (mapY - game.player.posY + (1 - stepY) / 2) / rayDirY;
+            if (side === 0) perpWallDist = (mapX - game.player.posX + wallXOffset + (1 - stepX) / 2) / rayDirX;
+            else           perpWallDist = (mapY - game.player.posY + wallYOffset + (1 - stepY) / 2) / rayDirY;
     
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / perpWallDist);
