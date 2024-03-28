@@ -1,4 +1,5 @@
 import { WorldObject } from "./world-object";
+import { DynamicObject } from "./dynamic-object";
 import { Door } from "./door";
 import { Sprite } from "./sprite";
 
@@ -8,8 +9,27 @@ export class World {
 	public ceiling = 5;
 	public floor = 2;
 
-    constructor() {
+    private dynamicObjects: Array<DynamicObject>;
+
+    private constructor() {
         this.objects = [];
+        this.dynamicObjects = [];
+    }
+
+    public step(delta: number) {
+        this.dynamicObjects.forEach(o => o.step(delta));
+    }
+
+    public cacheDynamicObjects() {
+        this.dynamicObjects.splice(0);
+        for (let x = 0; x < this.objects.length; x++) {
+            for (let y = 0; y < this.objects[x].length; y++) {
+                const obj = this.objects[x][y];
+                if ( obj instanceof Door ) {
+                    this.dynamicObjects.push(obj);
+                }
+            }
+        }
     }
 
     public static from(json: Array<Array<number>>, textureLimit: number): World {
@@ -37,6 +57,7 @@ export class World {
             world.objects.push(row);
 		}
 
+        world.cacheDynamicObjects();
         return world;
 	}
 }

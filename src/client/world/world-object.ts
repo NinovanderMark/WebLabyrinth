@@ -1,9 +1,11 @@
 export class WorldObject {
     public texture: number;
-    public block: boolean;
 
-    constructor(texture: number, block: boolean = true) {
+    constructor(texture: number) {
         this.texture = texture;
-        this.block = block;
+    }
+
+    public collidable(): boolean {
+        return true;
     }
 }

@@ -3,6 +3,9 @@ import { Player } from './player';
 import { Renderer } from './rendering/renderer';
 import { World } from './world/world';
 import { Vector } from './vector';
+import { RayCast } from "./raycast";
+import { Door } from './world/door';
+import { Interactable } from './world/interactable';
 
 export class Game {
 	public readonly textureLimit: number = 16;
@@ -33,20 +36,39 @@ export class Game {
 	 * Progresses the game by 1 step, and schedules the next step
 	 */
 	public tick() {
-		this.gameStep();
+		if (this.previousTime=== 0 ) {
+			this.previousTime = performance.now();
+		} else {
+			this.previousTime = this.currentTime;
+		}
+
+		this.currentTime = performance.now();
+
+		const delta = (this.currentTime - this.previousTime)/1000;
+		this.gameStep(delta);
+		this.world.step(delta);
 		this.renderer.render(this);
 
 		window.requestAnimationFrame(this.tick.bind(this));
 	}
 
-	private gameStep() {
+	private gameStep(delta: number) {
 		if ( this.input.keyQueue.length > 0) {
-			console.log(this.input.keyQueue);
 			if ( this.input.keyQueue.find((k) => k === 'm') != null) {
 				this.renderer.toggleMap();
 			}
 
 			this.input.clearQueue();
+		}
+
+		if ( this.input.usePressed) {
+			const playerPos = new Vector(this.player.posX, this.player.posY);
+			const ray = RayCast.ray(playerPos, this.player.direction, this.player.plane, 0, this.world);
+			if ( ray.hit && ray.perpWallDist < 2 ) {
+				if ( ray.worldObject instanceof Door) {
+					ray.worldObject.interact();
+				}
+			} 
 		}
 
 		if ( !this.input.anyDirectional() && this.input.mouseDragStart == null ) {
@@ -69,7 +91,7 @@ export class Game {
 		this.currentTileY = Math.floor(newPlayerY);
 
 		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
-		if (currentTile != null ) {
+		if (currentTile != null && currentTile.collidable()) {
 			return;
 		}
 

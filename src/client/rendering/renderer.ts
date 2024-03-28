@@ -3,6 +3,7 @@ import { Color } from "../color";
 import { Sprite } from "../world/sprite";
 import { ViewSprite } from "./view-sprite";
 import { Door } from "../world/door";
+import { WorldObject } from "../world/world-object";
 
 export class Renderer {
     screenWidth: number;
@@ -121,8 +122,10 @@ export class Renderer {
             var hit = 0;
             var wallXOffset = 0;
 	        var wallYOffset = 0;
-            var side;
-            var texNum;
+            var wallX: number;
+            var side: number;
+            var texNum: number;
+            var worldObject: WorldObject;
             
             // Perform DDA
             while (hit === 0)
@@ -141,7 +144,7 @@ export class Renderer {
                     side = 1;
                 }
                 // Check if ray has hit a wall
-                const worldObject = game.world.objects[mapY][mapX];
+                worldObject = game.world.objects[mapY][mapX];
                 if ( worldObject == null) continue;
 
                 if ( worldObject instanceof Sprite ) {
@@ -159,7 +162,7 @@ export class Renderer {
                         wallX = game.player.posX + perpWallDist * rayDirX;
                         wallX -= Math.floor(wallX);
                         if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
-                            if (!worldObject.closed && 1.0 - wallX <= worldObject.openAmount){
+                            if ( wallX <= worldObject.openAmount){
                                 hit = 0; //Continue raycast for open/opening doors
                                 wallYOffset = 0;
                             }
@@ -175,7 +178,7 @@ export class Renderer {
                         wallX = game.player.posY + perpWallDist * rayDirY;
                         wallX -= Math.floor(wallX);
                         if (sideDistX - (deltaDistX/2) < sideDistY) {
-                            if (!worldObject.closed && 1.0 - wallX < worldObject.openAmount) {
+                            if ( wallX < worldObject.openAmount) {
                                 hit = 0;
                                 wallXOffset = 0;
                             }
@@ -205,8 +208,6 @@ export class Renderer {
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            //calculate value of wallX
-            var wallX; //where exactly the wall was hit
             if (side == 0) wallX = game.player.posY + perpWallDist * rayDirY;
             else           wallX = game.player.posX + perpWallDist * rayDirX;
             wallX -= Math.floor(wallX);
@@ -216,7 +217,9 @@ export class Renderer {
             if(side == 0 && rayDirX > 0) texX = this.texWidth - texX;
             if(side == 1 && rayDirY < 0) texX = this.texWidth - texX;
 
-            const textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
+            var textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
+            if ( worldObject instanceof Door) { textureStartX += Math.floor(worldObject.openAmount * this.texWidth);}
+
             this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
             if ( side === 1 ) { 
                 this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';

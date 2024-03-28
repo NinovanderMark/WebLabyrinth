@@ -5,6 +5,8 @@ export class Input {
     public downPressed = false;
     public leftPressed = false;
     public rightPressed = false;
+    public usePressed = false;
+
     public leftMousePressed = false;
     public mouseDragStart: Vector | null = null;
     public mousePosition = new Vector(0,0);
@@ -17,6 +19,7 @@ export class Input {
             if (e.key === "ArrowRight") { this.rightPressed = true; };
             if (e.key === "ArrowUp") { this.upPressed = true; };
             if (e.key === "ArrowDown") { this.downPressed = true; };
+            if (e.key === " " ) {this.usePressed = true;}
         });
 
         el.addEventListener("keyup", (e: KeyboardEvent) => {
@@ -24,6 +27,7 @@ export class Input {
             if (e.key === "ArrowRight") { this.rightPressed = false; };
             if (e.key === "ArrowUp") { this.upPressed = false; };
             if (e.key === "ArrowDown") { this.downPressed = false; };
+            if (e.key === " " ) {this.usePressed = false;}
             if (e.key.length === 1 ) { this.keyQueue.push(e.key); }
         });
 
