@@ -3,7 +3,7 @@ import { Color } from "../color";
 import { Sprite } from "../world/sprite";
 import { ViewSprite } from "./view-sprite";
 import { Door } from "../world/door";
-import { WorldObject } from "../world/world-object";
+import { GameObject } from "../world/game-object";
 
 export class Renderer {
     screenWidth: number;
@@ -82,8 +82,8 @@ export class Renderer {
             var rayDirY = game.player.direction.y + game.player.plane.y * cameraX;
     
             // Which box of the map we're in
-            var mapX = Math.floor(game.player.posX);
-            var mapY = Math.floor(game.player.posY);
+            var mapX = Math.floor(game.player.position.x);
+            var mapY = Math.floor(game.player.position.y);
     
             // Length of ray from one X or Y-side to next X or Y-side
             var deltaDistX = Math.abs(1/rayDirX);
@@ -101,31 +101,33 @@ export class Renderer {
             if (rayDirX < 0)
             {
                 stepX = -1;
-                sideDistX = (game.player.posX - mapX) * deltaDistX;
+                sideDistX = (game.player.position.x - mapX) * deltaDistX;
             }
             else
             {
                 stepX = 1;
-                sideDistX = (mapX + 1 - game.player.posX) * deltaDistX;
+                sideDistX = (mapX + 1 - game.player.position.x) * deltaDistX;
             }
             if (rayDirY < 0)
             {
                 stepY = -1;
-                sideDistY = (game.player.posY - mapY) * deltaDistY;
+                sideDistY = (game.player.position.y - mapY) * deltaDistY;
             }
             else
             {
                 stepY = 1;
-                sideDistY = (mapY + 1 - game.player.posY) * deltaDistY;
+                sideDistY = (mapY + 1 - game.player.position.y) * deltaDistY;
             }
 
             var hit = 0;
             var wallXOffset = 0;
 	        var wallYOffset = 0;
+            var inside = false
+
             var wallX: number;
             var side: number;
             var texNum: number;
-            var worldObject: WorldObject;
+            var worldObject: GameObject;
             
             // Perform DDA
             while (hit === 0)
@@ -158,10 +160,10 @@ export class Renderer {
                     hit = 1;
                     if (side == 1) {
                         wallYOffset = 0.5 * stepY;
-                        perpWallDist = (mapY - game.player.posY + wallYOffset + (1 - stepY) / 2) / rayDirY;
-                        wallX = game.player.posX + perpWallDist * rayDirX;
-                        wallX -= Math.floor(wallX);
+                        perpWallDist = (mapY - game.player.position.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
                         if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
+                            wallX = game.player.position.x + perpWallDist * rayDirX;
+                            wallX -= Math.floor(wallX);
                             if ( wallX <= worldObject.openAmount){
                                 hit = 0; //Continue raycast for open/opening doors
                                 wallYOffset = 0;
@@ -169,15 +171,16 @@ export class Renderer {
                         } else {
                             mapX += stepX;
                             side = 0;
-                            //rayTex = 4; //Draw door frame instead
+                            inside =  true;
                             wallYOffset = 0;
+                            texNum = game.world.objects[mapY][mapX].texture;
                         }
                     } else { //side == 0
                         wallXOffset = 0.5 * stepX;
-                        perpWallDist  = (mapX - game.player.posX + wallXOffset + (1 - stepX) / 2) / rayDirX;
-                        wallX = game.player.posY + perpWallDist * rayDirY;
-                        wallX -= Math.floor(wallX);
+                        perpWallDist  = (mapX - game.player.position.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
                         if (sideDistX - (deltaDistX/2) < sideDistY) {
+                            wallX = game.player.position.y + perpWallDist * rayDirY;
+                            wallX -= Math.floor(wallX);
                             if ( wallX < worldObject.openAmount) {
                                 hit = 0;
                                 wallXOffset = 0;
@@ -185,8 +188,9 @@ export class Renderer {
                         } else {
                             mapY += stepY;
                             side = 1;
-                            //rayTex = 4;
+                            inside = true;
                             wallXOffset = 0;
+                            texNum = game.world.objects[mapY][mapX].texture;
                         }
                     }
                 } else {
@@ -198,8 +202,8 @@ export class Renderer {
             var perpWallDist;
 
             // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-            if (side === 0) perpWallDist = (mapX - game.player.posX + wallXOffset + (1 - stepX) / 2) / rayDirX;
-            else           perpWallDist = (mapY - game.player.posY + wallYOffset + (1 - stepY) / 2) / rayDirY;
+            if (side === 0) perpWallDist = (mapX - game.player.position.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
+            else           perpWallDist = (mapY - game.player.position.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
     
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / perpWallDist);
@@ -208,18 +212,25 @@ export class Renderer {
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            if (side == 0) wallX = game.player.posY + perpWallDist * rayDirY;
-            else           wallX = game.player.posX + perpWallDist * rayDirX;
+            if (side == 0) wallX = game.player.position.y + perpWallDist * rayDirY;
+            else           wallX = game.player.position.x + perpWallDist * rayDirX;
             wallX -= Math.floor(wallX);
 
             //x coordinate on the texture
             var texX = wallX * this.texWidth;
             if(side == 0 && rayDirX > 0) texX = this.texWidth - texX;
             if(side == 1 && rayDirY < 0) texX = this.texWidth - texX;
+            
+            if ( worldObject instanceof Door && !inside ) { 
+                if((side == 0 && rayDirX > 0 )|| (side == 1 && rayDirY < 0)) {
+                    texX += Math.floor(worldObject.openAmount * this.texWidth);
+                } else {
+                    texX -= Math.floor(worldObject.openAmount * this.texWidth);
+                }
+                
+            }
 
-            var textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
-            if ( worldObject instanceof Door) { textureStartX += Math.floor(worldObject.openAmount * this.texWidth);}
-
+            const textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
             this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
             if ( side === 1 ) { 
                 this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';
@@ -234,7 +245,7 @@ export class Renderer {
 
         // Sort from farthest to closest
         sprites.sort((a: ViewSprite, b: ViewSprite): number => {
-            return b.distanceTo(game.player.posX, game.player.posY) - a.distanceTo(game.player.posX, game.player.posY);
+            return b.distanceTo(game.player.position.x, game.player.position.y) - a.distanceTo(game.player.position.x, game.player.position.y);
         });
 
         sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch));
@@ -255,8 +266,8 @@ export class Renderer {
     }
 
     private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number) {
-        const spriteX = sprite.x - game.player.posX;
-        const spriteY = sprite.y - game.player.posY;
+        const spriteX = sprite.x - game.player.position.x;
+        const spriteY = sprite.y - game.player.position.y;
 
         const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
 
@@ -307,6 +318,15 @@ export class Renderer {
                 if ( obj instanceof Sprite ) {
                     this.drawContext.strokeStyle = '#f77';
                     this.drawCircle((x+0.5)*blockSize, (y+0.5)*blockSize, blockSize/2);
+                } else if ( obj instanceof Door && !obj.block) {
+                    var neighbour: GameObject;
+                    if ( x > 0) {
+                        neighbour = game.world.objects[y][x-1];
+                    } else {
+                        neighbour = game.world.objects[y][x+1];
+                    }
+                    if ( neighbour == null ) { this.drawContext.fillRect((x+0.25)*blockSize, y*blockSize, blockSize/2, blockSize); }
+                    else { this.drawContext.fillRect(x*blockSize, (y+0.25)*blockSize, blockSize, blockSize/2); }
                 } else {
                     this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 }
@@ -318,8 +338,8 @@ export class Renderer {
             }
         }
 
-        const playerX = game.player.posX*blockSize;
-        const playerY = game.player.posY*blockSize;
+        const playerX = game.player.position.x*blockSize;
+        const playerY = game.player.position.y*blockSize;
         this.drawContext.strokeStyle = "#fff";
         this.drawCircle(playerX, playerY, blockSize/2);
         this.drawContext.beginPath();

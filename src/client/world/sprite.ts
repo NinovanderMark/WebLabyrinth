@@ -1,6 +1,6 @@
-import { WorldObject } from "./world-object";
+import { GameObject } from "./game-object";
 
-export class Sprite extends WorldObject{
+export class Sprite extends GameObject{
     constructor(sprite: number) {
         super(sprite);
     }

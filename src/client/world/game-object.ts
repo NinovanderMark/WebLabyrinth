@@ -1,4 +1,4 @@
-export class WorldObject {
+export class GameObject {
     public texture: number;
 
     constructor(texture: number) {

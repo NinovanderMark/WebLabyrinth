@@ -62,8 +62,7 @@ export class Game {
 		}
 
 		if ( this.input.usePressed) {
-			const playerPos = new Vector(this.player.posX, this.player.posY);
-			const ray = RayCast.ray(playerPos, this.player.direction, this.player.plane, 0, this.world);
+			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
 			if ( ray.hit && ray.perpWallDist < 2 ) {
 				if ( ray.worldObject instanceof Door) {
 					ray.worldObject.interact();
@@ -80,23 +79,22 @@ export class Game {
 			return;
 		}
 
-		const newPlayerX = this.player.posX + movement.x;
-		const newPlayerY = this.player.posY + movement.y;
+		const newPlayerPos = this.player.position.add(movement);
 
 		// Out of bounds
-		if (newPlayerY > this.world.objects.length || newPlayerY < 0 || newPlayerX > this.world.objects[0].length || newPlayerX < 0) {
+		if (newPlayerPos.y > this.world.objects.length || newPlayerPos.y < 0 || 
+			newPlayerPos.x > this.world.objects[0].length || newPlayerPos.x < 0) {
 			return;
 		}
-		this.currentTileX = Math.floor(newPlayerX);
-		this.currentTileY = Math.floor(newPlayerY);
+		this.currentTileX = Math.floor(newPlayerPos.x);
+		this.currentTileY = Math.floor(newPlayerPos.y);
 
 		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
 		if (currentTile != null && currentTile.collidable()) {
 			return;
 		}
 
-		this.player.posX = newPlayerX;
-		this.player.posY = newPlayerY;
+		this.player.position = newPlayerPos;
 	}
 
 	private getMovementFromInput(): Vector {

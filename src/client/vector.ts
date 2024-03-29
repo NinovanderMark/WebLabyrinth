@@ -7,6 +7,10 @@ export class Vector {
         this.y = y;
     }
 
+    add(vector: Vector): Vector {
+        return new Vector(this.x + vector.x, this.y + vector.y);
+    }
+
     rotateBy(degrees: number) {
         degrees = -degrees * (Math.PI / 180);
         const cos = Math.cos(degrees);
