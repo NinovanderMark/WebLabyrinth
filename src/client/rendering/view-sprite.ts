@@ -1,7 +1,7 @@
-export class StaticObject {
-    x: number;
-    y: number;
-    sprite: number;
+export class ViewSprite {
+    public x: number;
+    public y: number;
+    public sprite: number;
 
     constructor(x: number, y: number, sprite: number) {
         this.x = x;

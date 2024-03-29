@@ -1,46 +1,16 @@
 import { Input } from './input';
 import { Player } from './player';
-import { Renderer } from './renderer';
-import { StaticObject } from './static-object';
+import { Renderer } from './rendering/renderer';
+import { World } from './world/world';
 import { Vector } from './vector';
+import { RayCast } from "./raycast";
+import { Door } from './world/door';
+import { Interactable } from './world/interactable';
 
 export class Game {
-    public walls = [
-		[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,3,0,0,0,2],
-		[4,0,0,0,0,0,0,2,2,2,2,2,2,0,0,3,0,3,3,3,0,0,0,2],
-		[4,0,3,3,0,0,0,2,0,0,0,0,2,0,0,0,0,0,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,2,0,2,2,0,2,0,0,3,3,3,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,0,0,0,2,0,2,0,0,3,0,0,0,3,0,0,0,2],
-		[4,0,3,3,0,0,2,0,0,0,0,0,2,0,0,3,0,3,3,3,0,0,0,2],
-		[4,0,0,0,0,0,2,0,0,0,2,2,2,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2],
-		[4,0,6,6,0,6,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,2],
-		[4,0,6,0,0,6,0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,6,0,0,0,0,0,5,5,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,6,6,6,6,0,0,0,0,0,0,5,0,0,5,0,0,0,0,0,0,0,2],
-		[4,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,0,0,1,0,0,1,1,2],
-		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,1,0,0,1,1,2],
-		[4,4,0,0,0,0,5,0,4,4,0,4,4,4,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,1,0,0,1,1,2],
-		[4,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,4,0,0,0,0,0,0,0,0,0,4,4,4,0,0,0,0,1,0,0,0,0,2],
-		[4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,1,0,0,0,0,2],
-		[4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]];
+	public readonly textureLimit: number = 16;
 
-	public staticObjects = [
-		new StaticObject(16.5, 8.5, 0),
-		new StaticObject(18.5, 8.5, 0),
-		new StaticObject(11.5, 8.5, 1),
-		new StaticObject(19.5, 15.5, 1),
-		new StaticObject(19.5, 22.5, 1),
-	];
-
-	public ceiling = 5;
-	public floor = 2;
+    public world: World;
 
 	player: Player;
 	input: Input;
@@ -58,24 +28,47 @@ export class Game {
 		this.player = new Player(17, 19);
 	}
 
+	public load(json: any) {
+		this.world = World.from(json as number[][], this.textureLimit);
+	}
+
 	/**
 	 * Progresses the game by 1 step, and schedules the next step
 	 */
 	public tick() {
-		this.gameStep();
+		if (this.previousTime=== 0 ) {
+			this.previousTime = performance.now();
+		} else {
+			this.previousTime = this.currentTime;
+		}
+
+		this.currentTime = performance.now();
+
+		const delta = (this.currentTime - this.previousTime)/1000;
+		this.gameStep(delta);
+		this.world.step(delta);
 		this.renderer.render(this);
 
 		window.requestAnimationFrame(this.tick.bind(this));
 	}
 
-	private gameStep() {
+	private gameStep(delta: number) {
 		if ( this.input.keyQueue.length > 0) {
-			console.log(this.input.keyQueue);
 			if ( this.input.keyQueue.find((k) => k === 'm') != null) {
 				this.renderer.toggleMap();
 			}
 
 			this.input.clearQueue();
+		}
+
+		// Interact with doors
+		if ( this.input.usePressed || this.input.leftMouseUp ) {
+			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
+			if ( ray.hit && ray.perpWallDist < 2 ) {
+				if ( ray.worldObject instanceof Door) {
+					ray.worldObject.interact();
+				}
+			} 
 		}
 
 		if ( !this.input.anyDirectional() && this.input.mouseDragStart == null ) {
@@ -87,29 +80,22 @@ export class Game {
 			return;
 		}
 
-		const newPlayerX = this.player.posX + movement.x;
-		const newPlayerY = this.player.posY + movement.y;
+		const newPlayerPos = this.player.position.add(movement);
 
 		// Out of bounds
-		if (newPlayerY > this.walls.length || newPlayerY < 0 || newPlayerX > this.walls[0].length || newPlayerX < 0) {
+		if (newPlayerPos.y > this.world.objects.length || newPlayerPos.y < 0 || 
+			newPlayerPos.x > this.world.objects[0].length || newPlayerPos.x < 0) {
 			return;
 		}
-		this.currentTileX = Math.floor(newPlayerX);
-		this.currentTileY = Math.floor(newPlayerY);
+		this.currentTileX = Math.floor(newPlayerPos.x);
+		this.currentTileY = Math.floor(newPlayerPos.y);
 
-		const currentTile = this.walls[this.currentTileY][this.currentTileX];
-		if (currentTile !== 0 ) {
+		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
+		if (currentTile != null && currentTile.collidable()) {
 			return;
 		}
 
-		for (let s = 0; s < this.staticObjects.length; s++) {
-			if ( this.staticObjects[s].distanceTo(newPlayerX, newPlayerY) <= 0.5) {
-				return;
-			}
-		}
-
-		this.player.posX = newPlayerX;
-		this.player.posY = newPlayerY;
+		this.player.position = newPlayerPos;
 	}
 
 	private getMovementFromInput(): Vector {
