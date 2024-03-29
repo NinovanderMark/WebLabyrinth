@@ -61,7 +61,8 @@ export class Game {
 			this.input.clearQueue();
 		}
 
-		if ( this.input.usePressed) {
+		// Interact with doors
+		if ( this.input.usePressed || this.input.leftMouseUp ) {
 			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
 			if ( ray.hit && ray.perpWallDist < 2 ) {
 				if ( ray.worldObject instanceof Door) {

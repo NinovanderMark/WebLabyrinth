@@ -8,11 +8,21 @@ export class Input {
     public usePressed = false;
 
     public leftMousePressed = false;
+    public previousLeftMousePressed = false;
     public mouseDragStart: Vector | null = null;
     public mousePosition = new Vector(0,0);
     
     public keyQueue = [];
     
+    public get leftMouseUp(): boolean {
+        if ( this.previousLeftMousePressed) {
+            this.previousLeftMousePressed = false;
+            return true;
+        }
+
+        return false;
+    }
+
     public attachEventListeners(el: HTMLElement) {
         el.addEventListener("keydown", (e: KeyboardEvent) => {
             if (e.key === "ArrowLeft") { this.leftPressed = true; };
@@ -47,6 +57,7 @@ export class Input {
         el.addEventListener("mouseup", (e: MouseEvent) => {
             if ( e.button === 0) {
                 this.leftMousePressed = false;
+                this.previousLeftMousePressed = true;
                 this.mouseDragStart = null;
             }
         });
