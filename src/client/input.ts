@@ -79,6 +79,7 @@ export class Input {
 
         el.addEventListener("touchend", (e: TouchEvent) => {
             this.leftMousePressed = false;
+            this.previousLeftMousePressed = true;
             this.mouseDragStart = null;
         });
     }
