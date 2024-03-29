@@ -4,6 +4,7 @@ import { Sprite } from "../world/sprite";
 import { ViewSprite } from "./view-sprite";
 import { Door } from "../world/door";
 import { GameObject } from "../world/game-object";
+import { RayCast } from "../raycast";
 
 export class Renderer {
     screenWidth: number;
@@ -78,161 +79,43 @@ export class Renderer {
 
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
-            var rayDirX = game.player.direction.x + game.player.plane.x * cameraX;
-            var rayDirY = game.player.direction.y + game.player.plane.y * cameraX;
-    
-            // Which box of the map we're in
-            var mapX = Math.floor(game.player.position.x);
-            var mapY = Math.floor(game.player.position.y);
-    
-            // Length of ray from one X or Y-side to next X or Y-side
-            var deltaDistX = Math.abs(1/rayDirX);
-            var deltaDistY = Math.abs(1/rayDirY);
+            var ray = RayCast.ray(game.player.position, game.player.direction, game.player.plane, cameraX, game.world);
 
-            // What direction to step in X or Y-direction (either +1 or -1)
-            var stepX;
-            var stepY;
-    
-            // Length of array from current position to next X or Y-side
-            var sideDistX;
-            var sideDistY;
-
-            // Calculate step and initial sideDist
-            if (rayDirX < 0)
-            {
-                stepX = -1;
-                sideDistX = (game.player.position.x - mapX) * deltaDistX;
-            }
-            else
-            {
-                stepX = 1;
-                sideDistX = (mapX + 1 - game.player.position.x) * deltaDistX;
-            }
-            if (rayDirY < 0)
-            {
-                stepY = -1;
-                sideDistY = (game.player.position.y - mapY) * deltaDistY;
-            }
-            else
-            {
-                stepY = 1;
-                sideDistY = (mapY + 1 - game.player.position.y) * deltaDistY;
-            }
-
-            var hit = 0;
-            var wallXOffset = 0;
-	        var wallYOffset = 0;
-            var inside = false
-
-            var wallX: number;
-            var side: number;
-            var texNum: number;
-            var worldObject: GameObject;
-            
-            // Perform DDA
-            while (hit === 0)
-            {
-                // Jump to next map square, OR in X-direction, OR in Y-direction
-                if (sideDistX < sideDistY)
-                {
-                    sideDistX += deltaDistX;
-                    mapX += stepX;
-                    side = 0;
+            ray.sprites.forEach(sprite => {
+                if ( sprites.findIndex(s => s.x === sprite.x && s.y === sprite.y && s.sprite === sprite.sprite) < 0) {
+                    sprites.push(sprite);
                 }
-                else
-                {
-                    sideDistY += deltaDistY;
-                    mapY += stepY;
-                    side = 1;
-                }
-                // Check if ray has hit a wall
-                worldObject = game.world.objects[mapY][mapX];
-                if ( worldObject == null) continue;
+            })
 
-                if ( worldObject instanceof Sprite ) {
-                    var viewSprite = new ViewSprite(mapX+0.5, mapY+0.5, worldObject.texture);
-                    if ( sprites.findIndex(v => v.x === viewSprite.x && v.y === viewSprite.y) < 0) {
-                        sprites.push(viewSprite);
-                    }
-                    continue;
-                } else if ( worldObject instanceof Door) {
-                    texNum = worldObject.texture;
-                    hit = 1;
-                    if (side == 1) {
-                        wallYOffset = 0.5 * stepY;
-                        perpWallDist = (mapY - game.player.position.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
-                        if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
-                            wallX = game.player.position.x + perpWallDist * rayDirX;
-                            wallX -= Math.floor(wallX);
-                            if ( wallX <= worldObject.openAmount){
-                                hit = 0; //Continue raycast for open/opening doors
-                                wallYOffset = 0;
-                            }
-                        } else {
-                            mapX += stepX;
-                            side = 0;
-                            inside =  true;
-                            wallYOffset = 0;
-                            texNum = game.world.objects[mapY][mapX].texture;
-                        }
-                    } else { //side == 0
-                        wallXOffset = 0.5 * stepX;
-                        perpWallDist  = (mapX - game.player.position.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
-                        if (sideDistX - (deltaDistX/2) < sideDistY) {
-                            wallX = game.player.position.y + perpWallDist * rayDirY;
-                            wallX -= Math.floor(wallX);
-                            if ( wallX < worldObject.openAmount) {
-                                hit = 0;
-                                wallXOffset = 0;
-                            }
-                        } else {
-                            mapY += stepY;
-                            side = 1;
-                            inside = true;
-                            wallXOffset = 0;
-                            texNum = game.world.objects[mapY][mapX].texture;
-                        }
-                    }
-                } else {
-                    texNum = worldObject.texture;
-                    hit = 1;
-                }
-            }
-    
-            var perpWallDist;
-
-            // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-            if (side === 0) perpWallDist = (mapX - game.player.position.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
-            else           perpWallDist = (mapY - game.player.position.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
-    
             // Calculate height of line to draw on screen
-            var lineHeight = Math.floor(this.screenHeight / perpWallDist);
+            var lineHeight = Math.floor(this.screenHeight / ray.perpWallDist);
 
             // Calculate lowest and highest pixel to fill in current stripe
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            if (side == 0) wallX = game.player.position.y + perpWallDist * rayDirY;
-            else           wallX = game.player.position.x + perpWallDist * rayDirX;
+            var wallX;
+            if (ray.side == 0) wallX = game.player.position.y + ray.perpWallDist * ray.direction.y;
+            else           wallX = game.player.position.x + ray.perpWallDist * ray.direction.x;
             wallX -= Math.floor(wallX);
 
             //x coordinate on the texture
             var texX = wallX * this.texWidth;
-            if(side == 0 && rayDirX > 0) texX = this.texWidth - texX;
-            if(side == 1 && rayDirY < 0) texX = this.texWidth - texX;
+            if(ray.side == 0 && ray.direction.x > 0) texX = this.texWidth - texX;
+            if(ray.side == 1 && ray.direction.y < 0) texX = this.texWidth - texX;
             
-            if ( worldObject instanceof Door && !inside ) { 
-                if((side == 0 && rayDirX > 0 )|| (side == 1 && rayDirY < 0)) {
-                    texX += Math.floor(worldObject.openAmount * this.texWidth);
+            if ( ray.worldObject instanceof Door && !ray.inside ) { 
+                if((ray.side == 0 && ray.direction.x > 0 )|| (ray.side == 1 && ray.direction.y < 0)) {
+                    texX += Math.floor(ray.worldObject.openAmount * this.texWidth);
                 } else {
-                    texX -= Math.floor(worldObject.openAmount * this.texWidth);
+                    texX -= Math.floor(ray.worldObject.openAmount * this.texWidth);
                 }
                 
             }
 
-            const textureStartX = Math.floor(this.texWidth+(texNum*this.texWidth)-texX);
+            const textureStartX = Math.floor(this.texWidth+(ray.texture*this.texWidth)-texX);
             this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
-            if ( side === 1 ) { 
+            if ( ray.side === 1 ) { 
                 this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';
                 this.drawContext.beginPath();
                 this.drawContext.moveTo(x, drawStart);
@@ -240,7 +123,7 @@ export class Renderer {
                 this.drawContext.stroke();
             }
 
-            zBuffer[x] = perpWallDist;
+            zBuffer[x] = ray.perpWallDist;
         }
 
         // Sort from farthest to closest

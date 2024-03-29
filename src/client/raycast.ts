@@ -13,11 +13,11 @@ export class RayCastResult {
     public hit: boolean;
     public side: number;
     public texture: number;
+    public direction: Vector;
 }
 
 export class RayCast {
     public static ray(originPos: Vector, originDir: Vector, originPlane: Vector, cameraX: number, world: World, stopOnSprite: boolean = false): RayCastResult {
-        const sprites: Array<ViewSprite> = [];
         var rayDirX = originDir.x + originPlane.x * cameraX;
         var rayDirY = originDir.y + originPlane.y * cameraX;
 
@@ -64,6 +64,7 @@ export class RayCast {
         var wallYOffset = 0;
         var inside = false
 
+        const sprites: Array<ViewSprite> = [];
         var wallX: number;
         var side: number;
         var texNum: number;
@@ -156,6 +157,7 @@ export class RayCast {
             result.inside = inside;
             result.worldObject = worldObject;
             result.texture = texNum;
+            result.direction = new Vector(rayDirX, rayDirY);
             return result;
     }
 }
