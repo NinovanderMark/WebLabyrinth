@@ -33,7 +33,10 @@ export class Game {
 		const url = new URL(urlString);
 		console.log('Loading new room from URL', url.href);
 
-		fetch(url.href).then((response) => {
+		fetch(url.href, {
+			method: 'get',
+			mode: 'cors'
+		}).then((response) => {
 			if ( response.ok ) {
 				response.json().then(json => {
 					const room = json as Room;
