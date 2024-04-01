@@ -1,4 +1,5 @@
 import { Game } from "./client/game";
+import { ResourceResolver } from "./client/resource-resolver";
 import { Input } from "./client/input";
 import { Renderer } from "./client/rendering/renderer";
 
@@ -7,14 +8,16 @@ input.attachEventListeners(document.getElementsByTagName('body')[0]);
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const depth = document.getElementById("depth") as HTMLCanvasElement;
-const textures = document.getElementById("textures") as HTMLImageElement;
-const sprites = document.getElementById("sprites") as HTMLImageElement;
-var renderer = new Renderer(1024, 768, canvas, textures, sprites, depth);
-var game = new Game(renderer, input);
+const parent = document.getElementById("client-parent") as HTMLElement;
+const resources = new ResourceResolver(parent);
+const renderer = new Renderer(1024, 768, resources, canvas, depth);
+const game = new Game(renderer, input);
 
-fetch("assets/world.json").then((response) => {
-    response.json().then(json => {
-        game.load(json);
-        game.tick();
-    })
-})
+var url = new URL("./assets/room.json", document.baseURI).href; // Local room is fallback
+
+const params = new URLSearchParams(window.location.search);
+if ( params.get('url') != null) {
+    url = params.get('url');
+} 
+
+game.loadRoom(url);

@@ -5,28 +5,26 @@ import { ViewSprite } from "./view-sprite";
 import { Door } from "../world/door";
 import { GameObject } from "../world/game-object";
 import { RayCast } from "../raycast";
+import { ResourceResolver } from "../resource-resolver";
 
 export class Renderer {
     screenWidth: number;
 	screenHeight: number;
 	canvas: HTMLCanvasElement;
 
+    resourceResolver: ResourceResolver;
 	drawContext: CanvasRenderingContext2D;
     depthContext: CanvasRenderingContext2D;
     mapVisible: boolean;
-    textures: HTMLImageElement;
-    sprites: HTMLImageElement;
 
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, canvasElement: HTMLCanvasElement, textures: HTMLImageElement, sprites: HTMLImageElement,
-        depthBuffer?: HTMLCanvasElement) {
+    constructor(width: number, height: number, resResolver: ResourceResolver, canvasElement: HTMLCanvasElement, depthBuffer?: HTMLCanvasElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
-        this.textures = textures;
-        this.sprites = sprites;
+        this.resourceResolver = resResolver;
 		this.canvas = canvasElement;
 		this.canvas.width = this.screenWidth;
 		this.canvas.height = this.screenHeight;
@@ -52,8 +50,20 @@ export class Renderer {
         this.drawContext.fillStyle = "#000";
         this.drawContext.fillRect(0,0,this.screenWidth, this.screenHeight);
     
+        const textures = this.resourceResolver.getTextures(game.world);
+        const sprites = this.resourceResolver.getSprites(game.world);
+        
+        if ( textures.naturalWidth === 0 || textures.naturalHeight === 0 || 
+            sprites.naturalWidth === 0  || sprites.naturalHeight === 0) {
+            this.drawContext.fillStyle = "#fff";
+            this.drawContext.font = "30px Arial";
+            this.drawContext.textAlign = "center";
+            this.drawContext.fillText("Loading textures...", this.screenWidth/2, this.screenHeight/2);
+            return;
+        }
+
         this.renderCeilingFloor(game);
-        this.renderWalls(game);
+        this.renderWalls(game, textures, sprites);
 
         if ( this.mapVisible ) {
             this.renderMap(game);
@@ -71,7 +81,7 @@ export class Renderer {
         this.drawContext.fillRect(0, this.screenHeight/2, this.screenWidth, this.screenHeight/2);
     }
 
-    private renderWalls(game: Game) {
+    private renderWalls(game: Game, textures: HTMLImageElement, spriteTextures: HTMLImageElement) {
         const pitch = 0;
         const zBuffer: Array<number> = [];
         zBuffer.fill(0, 0, this.screenWidth);
@@ -114,7 +124,7 @@ export class Renderer {
             }
 
             const textureStartX = Math.floor(this.texWidth+(ray.texture*this.texWidth)-texX);
-            this.drawContext.drawImage(this.textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
+            this.drawContext.drawImage(textures, textureStartX, 0, 1, this.texHeight, x, drawStart, 1, drawEnd - drawStart);
             if ( ray.side === 1 ) { 
                 this.drawContext.strokeStyle = 'rgba(0,0,0,0.6)';
                 this.drawContext.beginPath();
@@ -131,7 +141,7 @@ export class Renderer {
             return b.distanceTo(game.player.position.x, game.player.position.y) - a.distanceTo(game.player.position.x, game.player.position.y);
         });
 
-        sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch));
+        sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures));
 
         if (this.depthContext == null) {
             return;
@@ -148,7 +158,7 @@ export class Renderer {
         }
     }
 
-    private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number) {
+    private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number, texture: HTMLImageElement) {
         const spriteX = sprite.x - game.player.position.x;
         const spriteY = sprite.y - game.player.position.y;
 
@@ -181,7 +191,7 @@ export class Renderer {
             if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
                 const spriteStartX = (sprite.sprite * this.texWidth) + texX;
                 const startY = -(spriteHeight/2) + (this.screenHeight / 2) + pitch;
-                this.drawContext.drawImage(this.sprites, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
+                this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
                 zBuffer[stripe] = transformY;
             }
         }
@@ -189,7 +199,6 @@ export class Renderer {
 
     private renderMap(game: Game) {
         const blockSize = 8;
-        
 
         for (var y = 0; y < game.world.objects.length; y++) {
             for (var x = 0; x < game.world.objects[y].length; x++) {

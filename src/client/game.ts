@@ -1,3 +1,4 @@
+import { Room } from "./room/room";
 import { Input } from './input';
 import { Player } from './player';
 import { Renderer } from './rendering/renderer';
@@ -28,8 +29,25 @@ export class Game {
 		this.player = new Player(17, 19);
 	}
 
-	public load(json: any) {
-		this.world = World.from(json as number[][], this.textureLimit);
+	public loadRoom(urlString: string) {
+		const url = new URL(urlString);
+		console.log('Loading new room from URL', url.href);
+
+		fetch(url.href, {
+			method: 'get',
+			mode: 'cors'
+		}).then((response) => {
+			if ( response.ok ) {
+				response.json().then(json => {
+					const room = json as Room;
+					Room.validate(room);
+					this.world = World.from(room, url);
+					this.tick();
+				})
+			} else {
+				throw new Error(`Unable to retrieve room at URL: ${urlString}`);
+			}
+		})
 	}
 
 	/**
