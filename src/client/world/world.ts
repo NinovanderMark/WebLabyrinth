@@ -2,9 +2,12 @@ import { GameObject } from "./game-object";
 import { DynamicObject } from "./dynamic-object";
 import { Door } from "./door";
 import { Sprite } from "./sprite";
+import { Room } from "../room/room";
 
 export class World {
     public objects: Array<Array<GameObject | null>>;
+    public textures: URL;
+    public sprites: URL;
 
 	public ceiling = 5;
 	public floor = 2;
@@ -32,25 +35,40 @@ export class World {
         }
     }
 
-    public static from(json: Array<Array<number>>, textureLimit: number): World {
+    public static from(room: Room, url: URL): World {
+        let pathParts = url.pathname.split('/');
+        pathParts.splice(pathParts.length-1, 1);
+        const basePath = pathParts.join('/');
+
 		let world = new World();
-		for (let x = 0; x < json.length; x++) {
+        world.textures = new URL(`${basePath}/${room.textures}`, url.origin);
+        world.sprites = new URL(`${basePath}/${room.sprites}`, url.origin);
+
+		for (let x = 0; x < room.tiles.length; x++) {
 			let row: Array<GameObject> = [];
 
-			for (let y = 0; y < json[x].length; y++) {
-				const tile = json[x][y]-1;
+			for (let y = 0; y < room.tiles[x].length; y++) {
+				const tile = room.tiles[x][y]-1;
 				if ( tile < 0) {
                     row.push(null);
-                } else if (tile < textureLimit ) {
-					row.push(new GameObject(tile));
-				} else if ( tile < textureLimit*2) {
-                    row.push(new Sprite(tile - textureLimit));
-                } else if ( tile < textureLimit*3) {
-					row.push(new Door(tile - (textureLimit*2)));
-				} else if ( tile < textureLimit*4) {
-                    row.push(new Door(tile - (textureLimit*3), true));
                 } else {
-                    throw new Error(`Invalid tile number of ${tile+textureLimit} at ${x},${y}`);
+                    const obj = room.objects[tile];
+                    switch (obj.type) {
+                        case "block":
+                            row.push(new GameObject(obj["texture"] as number));
+                            break;
+
+                        case "door":
+                            row.push(new Door(obj["texture"] as number, false));
+                            break;
+
+                        case "sprite":
+                            row.push(new Sprite(obj["texture"] as number));
+                            break;
+
+                        default:
+                            throw new Error(`Unknown type '${obj.type}' for object ${tile} at ${y},${x}`);
+                    }
                 }
 			}
 
