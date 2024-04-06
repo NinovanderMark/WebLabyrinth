@@ -7,6 +7,7 @@ import { Vector } from './vector';
 import { RayCast } from "./raycast";
 import { Door } from './world/door';
 import { Interactable } from './world/interactable';
+import { Pickup } from "./world/pickup";
 
 export class Game {
 	public readonly textureLimit: number = 16;
@@ -114,6 +115,11 @@ export class Game {
 		}
 
 		this.player.position = newPlayerPos;
+
+		if ( currentTile instanceof Pickup) {
+			currentTile.onPickup(this.player);
+			this.world.objects[this.currentTileY][this.currentTileX] = null;
+		}
 	}
 
 	private getMovementFromInput(): Vector {

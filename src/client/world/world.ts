@@ -3,6 +3,7 @@ import { DynamicObject } from "./dynamic-object";
 import { Door } from "./door";
 import { Sprite } from "./sprite";
 import { Room } from "../room/room";
+import { Pickup } from "./pickup";
 
 export class World {
     public objects: Array<Array<GameObject | null>>;
@@ -64,6 +65,10 @@ export class World {
 
                         case "sprite":
                             row.push(new Sprite(obj["texture"] as number));
+                            break;
+
+                        case "item":
+                            row.push(new Pickup(obj["texture"] as number, obj["name"]));
                             break;
 
                         default:

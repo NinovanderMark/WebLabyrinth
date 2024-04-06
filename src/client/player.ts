@@ -1,7 +1,9 @@
 import { Vector } from './vector';
+import { Item } from "./item";
 
 export class Player {
     movementSpeed: number = 0.05;
+    items: Array<Item> = [];
 
     position: Vector;
     direction: Vector;

@@ -6,6 +6,7 @@ import { Door } from "../world/door";
 import { GameObject } from "../world/game-object";
 import { RayCast } from "../raycast";
 import { ResourceResolver } from "../resource-resolver";
+import { Player } from "../player";
 
 export class Renderer {
     screenWidth: number;
@@ -68,6 +69,22 @@ export class Renderer {
         if ( this.mapVisible ) {
             this.renderMap(game);
         }
+
+        this.renderInterface(game.player, sprites);
+    }
+
+    private renderInterface(player: Player, sprites: HTMLImageElement) {
+        let left = 16;
+        let bottom = 16;
+
+        player.items.forEach(i => {
+            const width = 48;
+            const y = this.screenHeight - (bottom+width);
+            for (let n = 0; n < i.amount; n++) {
+                this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/4), y, width, width);
+            }
+            bottom-=(width + 8);
+        });
     }
 
     private renderCeilingFloor(game: Game) {
