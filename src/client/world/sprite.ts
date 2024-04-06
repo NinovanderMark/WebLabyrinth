@@ -1,8 +1,11 @@
 import { GameObject } from "./game-object";
 
 export class Sprite extends GameObject{
-    constructor(sprite: number) {
+    public scale: number;
+    
+    constructor(sprite: number, scale: number = 1) {
         super(sprite);
+        this.scale = scale;
     }
 
     distanceBetween(x: number, y: number, otherX: number, otherY: number) : number {

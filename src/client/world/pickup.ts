@@ -5,8 +5,8 @@ import { Item } from "../item";
 export class Pickup extends Sprite {
     public name: string;
 
-    constructor(sprite: number, name: string) {
-        super(sprite);
+    constructor(sprite: number, name: string, scale: number = 1) {
+        super(sprite, scale);
         this.name = name;
     }
 

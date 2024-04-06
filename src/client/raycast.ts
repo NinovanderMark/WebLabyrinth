@@ -91,7 +91,7 @@ export class RayCast {
             if ( worldObject == null) continue;
 
             if ( worldObject instanceof Sprite ) {
-                var viewSprite = new ViewSprite(mapX+0.5, mapY+0.5, worldObject.texture);
+                var viewSprite = new ViewSprite(mapX+0.5, mapY+0.5, worldObject.texture, worldObject.scale);
                 if ( sprites.findIndex(v => v.x === viewSprite.x && v.y === viewSprite.y) < 0) {
                     sprites.push(viewSprite);
                 }

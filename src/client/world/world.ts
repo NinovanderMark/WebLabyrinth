@@ -68,7 +68,8 @@ export class World {
                             break;
 
                         case "item":
-                            row.push(new Pickup(obj["texture"] as number, obj["name"]));
+                            const scale = obj["scale"] as number;
+                            row.push(new Pickup(obj["texture"] as number, obj["name"], scale ?? 1));
                             break;
 
                         default:

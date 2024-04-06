@@ -43,7 +43,8 @@
         {
             "type":"item",
             "texture":2,
-            "name":"gold"
+            "name":"gold",
+            "scale":0.5
         }
     ],
     "tiles": [
