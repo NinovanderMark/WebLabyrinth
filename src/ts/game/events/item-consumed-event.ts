@@ -10,5 +10,7 @@ export class ItemConsumedEvent extends GameEvent {
     }
     
     public handle(handler: GameEventHandler) {
+        const sprite = handler.game.world.items.get(this.item).texture;
+        handler.guiManager.addDialog('Item consumed', sprite, handler.game.world);
     }
 }

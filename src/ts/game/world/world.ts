@@ -7,7 +7,7 @@ import { Pickup } from "./pickup";
 
 export class World {
     public objects: Array<Array<GameObject | null>>;
-    public items: Array<Pickup>;
+    public items: Map<string, Pickup>;
 
     public textures: URL;
     public sprites: URL;
@@ -20,7 +20,7 @@ export class World {
     private constructor() {
         this.objects = [];
         this.dynamicObjects = [];
-        this.items = [];
+        this.items = new Map<string, Pickup>();
     }
 
     public step(delta: number) {
@@ -73,9 +73,10 @@ export class World {
 
                         case "item":
                             const scale = obj["scale"] as number;
-                            const pickup = new Pickup(obj["texture"] as number, obj["name"], scale ?? 1);
+                            const name = obj["name"];
+                            const pickup = new Pickup(obj["texture"] as number, name, scale ?? 1);
                             row.push(pickup);
-                            world.items.push(pickup);
+                            world.items.set(name, pickup);
                             break;
 
                         default:

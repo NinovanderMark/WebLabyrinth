@@ -33,15 +33,16 @@ export class Door extends GameObject implements DynamicObject, Interactable {
 
     public interact(game: Game) {
         if ( this.key != null) {
+            const key = this.key;
             const keyIndex = game.player.items.findIndex(i => i.name === this.key && i.amount > 0);
             if ( keyIndex < 0) {
-                game.addEvent(new ItemRequiredEvent(this.key));
+                game.addEvent(new ItemRequiredEvent(key));
                 return; // Nothing happens, door is locked
             }
 
             game.player.items[keyIndex].amount -= 1;
             this.unlock();
-            game.addEvent(new ItemConsumedEvent(this.key));
+            game.addEvent(new ItemConsumedEvent(key));
             return;
         }
 

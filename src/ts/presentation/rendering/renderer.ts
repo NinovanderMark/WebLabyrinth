@@ -8,6 +8,7 @@ import { RayCast } from "../../game/raycast";
 import { ResourceResolver } from "../resource-resolver";
 import { Player } from "../../game/player";
 
+
 export class Renderer {
     screenWidth: number;
 	screenHeight: number;
@@ -15,13 +16,13 @@ export class Renderer {
 
     resourceResolver: ResourceResolver;
 	drawContext: CanvasRenderingContext2D;
-    depthContext: CanvasRenderingContext2D;
+    parentElement: HTMLElement;
     mapVisible: boolean;
 
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, resResolver: ResourceResolver, canvasElement: HTMLCanvasElement, depthBuffer?: HTMLCanvasElement) {
+    constructor(width: number, height: number, resResolver: ResourceResolver, canvasElement: HTMLCanvasElement, parent: HTMLElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
@@ -37,17 +38,14 @@ export class Renderer {
 
 		this.drawContext = context;
         this.drawContext.imageSmoothingEnabled = false;
-
-        if ( depthBuffer != null) {
-            this.depthContext = depthBuffer.getContext('2d');
-        }
+        this.parentElement = parent;
     }
 
     public toggleMap() {
         this.mapVisible = !this.mapVisible;
     }
 
-    public render(game: Game) {
+    public render(game: Game, delta: number) {
         this.drawContext.fillStyle = "#000";
         this.drawContext.fillRect(0,0,this.screenWidth, this.screenHeight);
     
@@ -70,14 +68,18 @@ export class Renderer {
             this.renderMap(game);
         }
 
-        this.renderInterface(game.player, sprites);
+        this.renderInterface(game.player, sprites, delta);
     }
 
-    private renderInterface(player: Player, sprites: HTMLImageElement) {
+    private renderInterface(player: Player, sprites: HTMLImageElement, delta: number) {
         let left = 16;
         let bottom = 16;
 
         player.items.forEach(i => {
+            if ( i.amount < 1) {
+                return;
+            }
+            
             const width = 48;
             const y = this.screenHeight - (bottom+width);
             for (let n = 0; n < i.amount; n++) {
@@ -159,20 +161,6 @@ export class Renderer {
         });
 
         sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures));
-
-        if (this.depthContext == null) {
-            return;
-        }
-
-        var maxDepth = game.world.objects.length;
-        for (let x = 0; x < this.screenWidth; x++) {
-            const color = (zBuffer[x] / maxDepth) * 100;
-            this.depthContext.strokeStyle = `hsl(0, 0%, ${100-color}%)`
-            this.depthContext.beginPath();
-            this.depthContext.moveTo(x, 0);
-            this.depthContext.lineTo(x, this.screenHeight);
-            this.depthContext.stroke();
-        }
     }
 
     private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number, texture: HTMLImageElement) {

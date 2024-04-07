@@ -9,6 +9,7 @@ import { Door } from './world/door';
 import { Pickup } from "./world/pickup";
 import { GameEventHandler } from "./events/game-event-handler";
 import { GameEvent } from "./events/game-event";
+import { GuiManager } from "../presentation/gui-manager";
 
 export class Game {
     public world: World;
@@ -16,6 +17,7 @@ export class Game {
 	player: Player;
 	input: Input;
 	renderer: Renderer;
+	guiManager: GuiManager;
 	events: Array<GameEvent>;
 	handler: GameEventHandler;
 	
@@ -25,11 +27,13 @@ export class Game {
 	currentTime = 0;
 	previousTime = 0;
 
-	constructor(renderer: Renderer, input: Input) {
+	constructor(renderer: Renderer, input: Input, guiManager: GuiManager) {
 		this.renderer = renderer;
 		this.input = input;
+		this.guiManager = guiManager;
+		this.handler = new GameEventHandler(this, guiManager);
+
 		this.player = new Player(17, 19);
-		this.handler = new GameEventHandler();
 		this.events = new Array<GameEvent>();
 	}
 
@@ -69,8 +73,11 @@ export class Game {
 		const delta = (this.currentTime - this.previousTime)/1000;
 		this.gameStep(delta);
 		this.world.step(delta);
-		this.renderer.render(this);
+		this.renderer.render(this, delta);
+		this.guiManager.tick(delta);
+
 		this.events.forEach(e => this.handler.handle(e));
+		this.events = [];
 
 		window.requestAnimationFrame(this.tick.bind(this));
 	}
