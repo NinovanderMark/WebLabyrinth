@@ -73,8 +73,9 @@ export class World {
 
                         case "item":
                             const scale = obj["scale"] as number;
+                            const amount = obj["amount"] as number;
                             const name = obj["name"];
-                            const pickup = new Pickup(obj["texture"] as number, name, scale ?? 1);
+                            const pickup = new Pickup(obj["texture"] as number, name, amount ?? 1, scale ?? 1);
                             row.push(pickup);
                             world.items.set(name, pickup);
                             break;

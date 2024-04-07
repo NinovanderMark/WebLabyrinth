@@ -26,6 +26,7 @@ export class Room {
         var tilesWidth = room.tiles[0].length;
         for (let y = 0; y < room.tiles.length; y++) {
             if ( room.tiles[y].length != tilesWidth) {
+                console.debug('Faulty row looks like', room.tiles[y]);
                 throw new Error(`Irregular row length for row ${y}, expected: ${tilesWidth} actual: ${room.tiles[y].length}`);
             }
 

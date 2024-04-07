@@ -15,6 +15,17 @@ export class Player {
         this.plane = new Vector(0.66, 0);
     }
 
+    get score(): number {
+        let points = 0;
+        this.items.forEach(i => {
+            if ( i.name === 'score') {
+                points+=i.amount;
+            }
+        })
+
+        return points;
+    }
+
     rotateBy(degrees: number) {
         this.direction.rotateBy(degrees);
         this.plane.rotateBy(degrees);

@@ -1,18 +1,24 @@
 import { World } from "../game/world/world";
 import { Dialog } from "./dialog";
 import { ResourceResolver } from "./resource-resolver";
+import { Game } from "../game/game";
 
 export class GuiManager {
     resourceResolver: ResourceResolver;
     parentElement: HTMLElement;
+    scoreElement: HTMLElement;
 
     dialog: Dialog | null;
+    lastScore = -1;
     texWidth = 64;
     texHeight = 64;
 
     constructor(resourceResolver: ResourceResolver, parent: HTMLElement) {
         this.resourceResolver = resourceResolver;
         this.parentElement = parent;
+        this.scoreElement = document.createElement('p');
+        this.scoreElement.classList.add('score');
+        this.parentElement.appendChild(this.scoreElement);
     }
 
     public addDialog(message: string, sprite: number | null = null, world: World | null = null) {
@@ -35,13 +41,18 @@ export class GuiManager {
         this.dialog = new Dialog(message, element, sprite);
     }
 
-    public tick(delta: number) {
+    public tick(game: Game, delta: number) {
         if ( this.dialog ) {
             this.dialog.addDelta(delta);
             if ( this.dialog.alive > 3 ) {
                 this.parentElement.removeChild(this.dialog.element);
                 this.dialog = null;
             }
+        }
+
+        if ( game.player.score !== this.lastScore) {
+            this.lastScore = game.player.score;
+            this.scoreElement.innerText = `${this.lastScore}`.padStart(10, '0');
         }
     }
 

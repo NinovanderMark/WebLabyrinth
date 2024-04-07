@@ -76,14 +76,15 @@ export class Renderer {
         let bottom = 16;
 
         player.items.forEach(i => {
-            if ( i.amount < 1) {
+            // Don't draw items we have none of, or who are in the special 'score' category
+            if ( i.amount < 1 || i.name === 'score' ) {
                 return;
             }
-            
+
             const width = 48;
             const y = this.screenHeight - (bottom+width);
             for (let n = 0; n < i.amount; n++) {
-                this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/4), y, width, width);
+                this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/2), y, width, width);
             }
             bottom+=(width/2 + 8);
         });
@@ -194,8 +195,11 @@ export class Renderer {
             //3) it's on the screen (right)
             //4) ZBuffer, with perpendicular distance
             if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
-                const spriteStartX = (sprite.sprite * this.texWidth) + texX;
-                const startY = -(spriteHeight/2) + (spriteHeight - spriteHeight * sprite.scale) + (this.screenHeight / 2) + pitch;
+                // Ensure that we don't pick a pixel that's outside the tile, which may happen due to rounding with scaled sprites
+                let spriteStartX = Math.min((sprite.sprite * this.texWidth) + texX,(sprite.sprite * this.texWidth) + this.texWidth);
+                spriteStartX = Math.max(spriteStartX, (sprite.sprite * this.texWidth));
+
+                const startY = -((spriteHeight* sprite.scale)/2) + (spriteHeight - (spriteHeight * sprite.scale)) + (this.screenHeight / 2) + pitch;
                 this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
                 zBuffer[stripe] = transformY;
             }

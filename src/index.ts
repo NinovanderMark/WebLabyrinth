@@ -3,16 +3,19 @@ import { ResourceResolver } from "./ts/presentation/resource-resolver";
 import { Input } from "./ts/presentation/input";
 import { Renderer } from "./ts/presentation/rendering/renderer";
 import { GuiManager } from "./ts/presentation/gui-manager";
-import { GameEventHandler } from "./ts/game/events/game-event-handler";
 
 const input = new Input();
 input.attachEventListeners(document.getElementsByTagName('body')[0]);
 
+const width = 1024;
+const height = 768;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const depth = document.getElementById("depth") as HTMLCanvasElement;
 const parent = document.getElementById("client-parent") as HTMLElement;
+parent.style.width = `${width}px`;
+
 const resources = new ResourceResolver(parent);
-const renderer = new Renderer(1024, 768, resources, canvas, depth);
+const renderer = new Renderer(width, height, resources, canvas, depth);
 const guiManager = new GuiManager(resources, parent);
 const game = new Game(renderer, input, guiManager);
 

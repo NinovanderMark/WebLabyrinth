@@ -74,7 +74,7 @@ export class Game {
 		this.gameStep(delta);
 		this.world.step(delta);
 		this.renderer.render(this, delta);
-		this.guiManager.tick(delta);
+		this.guiManager.tick(this, delta);
 
 		this.events.forEach(e => this.handler.handle(e));
 		this.events = [];
