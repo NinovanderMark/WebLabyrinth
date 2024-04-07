@@ -1,4 +1,4 @@
-import { Vector } from "./vector";
+import { Vector } from "../base/vector";
 
 export class Input {
     public upPressed = false;

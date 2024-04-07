@@ -1,12 +1,11 @@
 import { Room } from "./room/room";
-import { Input } from './input';
+import { Input } from '../presentation/input';
 import { Player } from './player';
-import { Renderer } from './rendering/renderer';
+import { Renderer } from '../presentation/rendering/renderer';
 import { World } from './world/world';
-import { Vector } from './vector';
+import { Vector } from '../base/vector';
 import { RayCast } from "./raycast";
 import { Door } from './world/door';
-import { Interactable } from './world/interactable';
 import { Pickup } from "./world/pickup";
 import { GameEventHandler } from "./events/game-event-handler";
 import { GameEvent } from "./events/game-event";

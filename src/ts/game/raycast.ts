@@ -1,6 +1,6 @@
 import { World } from "./world/world";
-import { Vector } from "./vector";
-import { ViewSprite } from "./rendering/view-sprite";
+import { Vector } from "../base/vector";
+import { ViewSprite } from "../presentation/rendering/view-sprite";
 import { Sprite } from "./world/sprite";
 import { Door } from "./world/door";
 import { GameObject } from "./world/game-object";

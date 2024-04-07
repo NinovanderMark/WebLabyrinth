@@ -1,7 +1,7 @@
-import { Game } from "./client/game";
-import { ResourceResolver } from "./client/resource-resolver";
-import { Input } from "./client/input";
-import { Renderer } from "./client/rendering/renderer";
+import { Game } from "./ts/game/game";
+import { ResourceResolver } from "./ts/presentation/resource-resolver";
+import { Input } from "./ts/presentation/input";
+import { Renderer } from "./ts/presentation/rendering/renderer";
 
 const input = new Input();
 input.attachEventListeners(document.getElementsByTagName('body')[0]);

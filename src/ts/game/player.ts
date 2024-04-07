@@ -1,4 +1,4 @@
-import { Vector } from './vector';
+import { Vector } from '../base/vector';
 import { Item } from "./item";
 
 export class Player {

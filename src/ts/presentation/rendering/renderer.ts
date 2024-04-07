@@ -1,12 +1,12 @@
-import { Game } from "../game";
-import { Color } from "../color";
-import { Sprite } from "../world/sprite";
+import { Game } from "../../game/game";
+import { Color } from "../../base/color";
+import { Sprite } from "../../game/world/sprite";
 import { ViewSprite } from "./view-sprite";
-import { Door } from "../world/door";
-import { GameObject } from "../world/game-object";
-import { RayCast } from "../raycast";
+import { Door } from "../../game/world/door";
+import { GameObject } from "../../game/world/game-object";
+import { RayCast } from "../../game/raycast";
 import { ResourceResolver } from "../resource-resolver";
-import { Player } from "../player";
+import { Player } from "../../game/player";
 
 export class Renderer {
     screenWidth: number;
