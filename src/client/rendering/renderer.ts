@@ -83,7 +83,7 @@ export class Renderer {
             for (let n = 0; n < i.amount; n++) {
                 this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/4), y, width, width);
             }
-            bottom-=(width + 8);
+            bottom+=(width/2 + 8);
         });
     }
 

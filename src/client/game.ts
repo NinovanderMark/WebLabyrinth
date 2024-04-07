@@ -8,15 +8,17 @@ import { RayCast } from "./raycast";
 import { Door } from './world/door';
 import { Interactable } from './world/interactable';
 import { Pickup } from "./world/pickup";
+import { GameEventHandler } from "./events/game-event-handler";
+import { GameEvent } from "./events/game-event";
 
 export class Game {
-	public readonly textureLimit: number = 16;
-
     public world: World;
 
 	player: Player;
 	input: Input;
 	renderer: Renderer;
+	events: Array<GameEvent>;
+	handler: GameEventHandler;
 	
 	currentTileX = 0;
 	currentTileY = 0;
@@ -28,6 +30,8 @@ export class Game {
 		this.renderer = renderer;
 		this.input = input;
 		this.player = new Player(17, 19);
+		this.handler = new GameEventHandler();
+		this.events = new Array<GameEvent>();
 	}
 
 	public loadRoom(urlString: string) {
@@ -67,8 +71,13 @@ export class Game {
 		this.gameStep(delta);
 		this.world.step(delta);
 		this.renderer.render(this);
+		this.events.forEach(e => this.handler.handle(e));
 
 		window.requestAnimationFrame(this.tick.bind(this));
+	}
+
+	public addEvent(event: GameEvent) {
+		this.events.push(event);
 	}
 
 	private gameStep(delta: number) {
@@ -85,7 +94,7 @@ export class Game {
 			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
 			if ( ray.hit && ray.perpWallDist < 2 ) {
 				if ( ray.worldObject instanceof Door) {
-					ray.worldObject.interact();
+					ray.worldObject.interact(this);
 				}
 			} 
 		}

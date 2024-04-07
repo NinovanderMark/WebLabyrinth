@@ -7,6 +7,8 @@ import { Pickup } from "./pickup";
 
 export class World {
     public objects: Array<Array<GameObject | null>>;
+    public items: Array<Pickup>;
+
     public textures: URL;
     public sprites: URL;
 
@@ -18,6 +20,7 @@ export class World {
     private constructor() {
         this.objects = [];
         this.dynamicObjects = [];
+        this.items = [];
     }
 
     public step(delta: number) {
@@ -60,7 +63,8 @@ export class World {
                             break;
 
                         case "door":
-                            row.push(new Door(obj["texture"] as number, false));
+                            const unlockTexture = obj["texture-unlocked"] as number | null;
+                            row.push(new Door(obj["texture"] as number, obj["key"] as string, unlockTexture));
                             break;
 
                         case "sprite":
@@ -69,7 +73,9 @@ export class World {
 
                         case "item":
                             const scale = obj["scale"] as number;
-                            row.push(new Pickup(obj["texture"] as number, obj["name"], scale ?? 1));
+                            const pickup = new Pickup(obj["texture"] as number, obj["name"], scale ?? 1);
+                            row.push(pickup);
+                            world.items.push(pickup);
                             break;
 
                         default:
