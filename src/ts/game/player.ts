@@ -1,4 +1,4 @@
-import { Vector } from './vector';
+import { Vector } from '../base/vector';
 import { Item } from "./item";
 
 export class Player {
@@ -13,6 +13,17 @@ export class Player {
         this.position = new Vector(x, y);
         this.direction = new Vector(0, -1);
         this.plane = new Vector(0.66, 0);
+    }
+
+    get score(): number {
+        let points = 0;
+        this.items.forEach(i => {
+            if ( i.name === 'score') {
+                points+=i.amount;
+            }
+        })
+
+        return points;
     }
 
     rotateBy(degrees: number) {

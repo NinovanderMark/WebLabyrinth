@@ -1,4 +1,4 @@
-import { World } from "./world/world";
+import { World } from "../game/world/world";
 
 export class ResourceResolver {
     public parentElement: HTMLElement;

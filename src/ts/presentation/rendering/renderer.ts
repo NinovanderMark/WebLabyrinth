@@ -1,12 +1,13 @@
-import { Game } from "../game";
-import { Color } from "../color";
-import { Sprite } from "../world/sprite";
+import { Game } from "../../game/game";
+import { Color } from "../../base/color";
+import { Sprite } from "../../game/world/sprite";
 import { ViewSprite } from "./view-sprite";
-import { Door } from "../world/door";
-import { GameObject } from "../world/game-object";
-import { RayCast } from "../raycast";
+import { Door } from "../../game/world/door";
+import { GameObject } from "../../game/world/game-object";
+import { RayCast } from "../../game/raycast";
 import { ResourceResolver } from "../resource-resolver";
-import { Player } from "../player";
+import { Player } from "../../game/player";
+
 
 export class Renderer {
     screenWidth: number;
@@ -15,13 +16,13 @@ export class Renderer {
 
     resourceResolver: ResourceResolver;
 	drawContext: CanvasRenderingContext2D;
-    depthContext: CanvasRenderingContext2D;
+    parentElement: HTMLElement;
     mapVisible: boolean;
 
     texWidth = 64;
     texHeight = 64;
 
-    constructor(width: number, height: number, resResolver: ResourceResolver, canvasElement: HTMLCanvasElement, depthBuffer?: HTMLCanvasElement) {
+    constructor(width: number, height: number, resResolver: ResourceResolver, canvasElement: HTMLCanvasElement, parent: HTMLElement) {
         this.screenWidth = width;
 		this.screenHeight = height;
 
@@ -37,17 +38,14 @@ export class Renderer {
 
 		this.drawContext = context;
         this.drawContext.imageSmoothingEnabled = false;
-
-        if ( depthBuffer != null) {
-            this.depthContext = depthBuffer.getContext('2d');
-        }
+        this.parentElement = parent;
     }
 
     public toggleMap() {
         this.mapVisible = !this.mapVisible;
     }
 
-    public render(game: Game) {
+    public render(game: Game, delta: number) {
         this.drawContext.fillStyle = "#000";
         this.drawContext.fillRect(0,0,this.screenWidth, this.screenHeight);
     
@@ -70,20 +68,25 @@ export class Renderer {
             this.renderMap(game);
         }
 
-        this.renderInterface(game.player, sprites);
+        this.renderInterface(game.player, sprites, delta);
     }
 
-    private renderInterface(player: Player, sprites: HTMLImageElement) {
+    private renderInterface(player: Player, sprites: HTMLImageElement, delta: number) {
         let left = 16;
         let bottom = 16;
 
         player.items.forEach(i => {
+            // Don't draw items we have none of, or who are in the special 'score' category
+            if ( i.amount < 1 || i.name === 'score' ) {
+                return;
+            }
+
             const width = 48;
             const y = this.screenHeight - (bottom+width);
             for (let n = 0; n < i.amount; n++) {
-                this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/4), y, width, width);
+                this.drawContext.drawImage(sprites, i.sprite*this.texWidth, 0, this.texWidth, this.texHeight, left+(n*width/2), y, width, width);
             }
-            bottom-=(width + 8);
+            bottom+=(width/2 + 8);
         });
     }
 
@@ -159,20 +162,6 @@ export class Renderer {
         });
 
         sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures));
-
-        if (this.depthContext == null) {
-            return;
-        }
-
-        var maxDepth = game.world.objects.length;
-        for (let x = 0; x < this.screenWidth; x++) {
-            const color = (zBuffer[x] / maxDepth) * 100;
-            this.depthContext.strokeStyle = `hsl(0, 0%, ${100-color}%)`
-            this.depthContext.beginPath();
-            this.depthContext.moveTo(x, 0);
-            this.depthContext.lineTo(x, this.screenHeight);
-            this.depthContext.stroke();
-        }
     }
 
     private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number, texture: HTMLImageElement) {
@@ -206,8 +195,11 @@ export class Renderer {
             //3) it's on the screen (right)
             //4) ZBuffer, with perpendicular distance
             if(transformY > 0 && stripe > 0 && stripe < this.screenWidth && transformY < zBuffer[stripe]) {
-                const spriteStartX = (sprite.sprite * this.texWidth) + texX;
-                const startY = -(spriteHeight/2) + (spriteHeight - spriteHeight * sprite.scale) + (this.screenHeight / 2) + pitch;
+                // Ensure that we don't pick a pixel that's outside the tile, which may happen due to rounding with scaled sprites
+                let spriteStartX = Math.min((sprite.sprite * this.texWidth) + texX,(sprite.sprite * this.texWidth) + this.texWidth);
+                spriteStartX = Math.max(spriteStartX, (sprite.sprite * this.texWidth));
+
+                const startY = -((spriteHeight* sprite.scale)/2) + (spriteHeight - (spriteHeight * sprite.scale)) + (this.screenHeight / 2) + pitch;
                 this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
                 zBuffer[stripe] = transformY;
             }

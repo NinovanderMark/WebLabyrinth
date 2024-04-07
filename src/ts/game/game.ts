@@ -1,22 +1,25 @@
 import { Room } from "./room/room";
-import { Input } from './input';
+import { Input } from '../presentation/input';
 import { Player } from './player';
-import { Renderer } from './rendering/renderer';
+import { Renderer } from '../presentation/rendering/renderer';
 import { World } from './world/world';
-import { Vector } from './vector';
+import { Vector } from '../base/vector';
 import { RayCast } from "./raycast";
 import { Door } from './world/door';
-import { Interactable } from './world/interactable';
 import { Pickup } from "./world/pickup";
+import { GameEventHandler } from "./events/game-event-handler";
+import { GameEvent } from "./events/game-event";
+import { GuiManager } from "../presentation/gui-manager";
 
 export class Game {
-	public readonly textureLimit: number = 16;
-
     public world: World;
 
 	player: Player;
 	input: Input;
 	renderer: Renderer;
+	guiManager: GuiManager;
+	events: Array<GameEvent>;
+	handler: GameEventHandler;
 	
 	currentTileX = 0;
 	currentTileY = 0;
@@ -24,10 +27,14 @@ export class Game {
 	currentTime = 0;
 	previousTime = 0;
 
-	constructor(renderer: Renderer, input: Input) {
+	constructor(renderer: Renderer, input: Input, guiManager: GuiManager) {
 		this.renderer = renderer;
 		this.input = input;
+		this.guiManager = guiManager;
+		this.handler = new GameEventHandler(this, guiManager);
+
 		this.player = new Player(17, 19);
+		this.events = new Array<GameEvent>();
 	}
 
 	public loadRoom(urlString: string) {
@@ -66,9 +73,17 @@ export class Game {
 		const delta = (this.currentTime - this.previousTime)/1000;
 		this.gameStep(delta);
 		this.world.step(delta);
-		this.renderer.render(this);
+		this.renderer.render(this, delta);
+		this.guiManager.tick(this, delta);
+
+		this.events.forEach(e => this.handler.handle(e));
+		this.events = [];
 
 		window.requestAnimationFrame(this.tick.bind(this));
+	}
+
+	public addEvent(event: GameEvent) {
+		this.events.push(event);
 	}
 
 	private gameStep(delta: number) {
@@ -85,7 +100,7 @@ export class Game {
 			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
 			if ( ray.hit && ray.perpWallDist < 2 ) {
 				if ( ray.worldObject instanceof Door) {
-					ray.worldObject.interact();
+					ray.worldObject.interact(this);
 				}
 			} 
 		}
