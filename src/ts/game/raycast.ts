@@ -102,11 +102,12 @@ export class RayCast {
             } else if ( worldObject instanceof Door) {
                 if ( worldObject.block ) {
                     if ( worldObject.openAmount < 1) {
-                        if (side === 1 && sideDistY - (deltaDistY*(-worldObject.openAmount)) < sideDistX) {
+                        // Distance starts at 1, which is a normal hit, then offset by twice the open amount
+                        if (side === 1 && sideDistY - (deltaDistY*(1-worldObject.openAmount*2)) < sideDistX) {
                             hit = 1;
                             texNum = worldObject.texture;
                             wallYOffset = (worldObject.openAmount*2) * stepY;
-                        } else if (side === 0 && sideDistX - (deltaDistX*(-worldObject.openAmount)) < sideDistY) {
+                        } else if (side === 0 && sideDistX - (deltaDistX*(1-worldObject.openAmount*2)) < sideDistY) {
                             hit = 1;
                             texNum = worldObject.texture;
                             wallXOffset = (worldObject.openAmount*2) * stepX;

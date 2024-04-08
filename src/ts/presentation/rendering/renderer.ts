@@ -134,7 +134,7 @@ export class Renderer {
             if(ray.side == 0 && ray.direction.x > 0) texX = this.texWidth - texX;
             if(ray.side == 1 && ray.direction.y < 0) texX = this.texWidth - texX;
             
-            if ( ray.worldObject instanceof Door && !ray.inside ) { 
+            if ( ray.worldObject instanceof Door && !ray.worldObject.block && !ray.inside ) { 
                 if((ray.side == 0 && ray.direction.x > 0 )|| (ray.side == 1 && ray.direction.y < 0)) {
                     texX += Math.floor(ray.worldObject.openAmount * this.texWidth);
                 } else {
