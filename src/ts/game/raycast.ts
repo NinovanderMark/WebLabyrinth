@@ -100,41 +100,57 @@ export class RayCast {
                 }
                 continue;
             } else if ( worldObject instanceof Door) {
-                texNum = worldObject.texture;
-                hit = 1;
-                if (side == 1) {
-                    wallYOffset = 0.5 * stepY;
-                    perpWallDist = (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
-                    if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
-                        wallX = originPos.x + perpWallDist * rayDirX;
-                        wallX -= Math.floor(wallX);
-                        if ( wallX <= worldObject.openAmount){
-                            hit = 0; //Continue raycast for open/opening doors
-                            wallYOffset = 0;
+                if ( worldObject.block ) {
+                    if ( worldObject.openAmount < 1) {
+                        // Distance starts at 1, which is a normal hit, then offset by twice the open amount
+                        if (side === 1 && sideDistY - (deltaDistY*(1-worldObject.openAmount*2)) < sideDistX) {
+                            hit = 1;
+                            texNum = worldObject.texture;
+                            wallYOffset = (worldObject.openAmount*2) * stepY;
+                        } else if (side === 0 && sideDistX - (deltaDistX*(1-worldObject.openAmount*2)) < sideDistY) {
+                            hit = 1;
+                            texNum = worldObject.texture;
+                            wallXOffset = (worldObject.openAmount*2) * stepX;
                         }
-                    } else {
-                        mapX += stepX;
-                        side = 0;
-                        inside =  true;
-                        wallYOffset = 0;
-                        texNum = world.objects[mapY][mapX].texture;
                     }
-                } else { //side == 0
-                    wallXOffset = 0.5 * stepX;
-                    perpWallDist  = (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
-                    if (sideDistX - (deltaDistX/2) < sideDistY) {
-                        wallX = originPos.y + perpWallDist * rayDirY;
-                        wallX -= Math.floor(wallX);
-                        if ( wallX < worldObject.openAmount) {
-                            hit = 0;
-                            wallXOffset = 0;
+                } else {
+                    texNum = worldObject.texture;
+                    hit = 1;
+
+                    if (side == 1) {
+                        wallYOffset = 0.5 * stepY;
+                        perpWallDist = (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
+                        if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
+                            wallX = originPos.x + perpWallDist * rayDirX;
+                            wallX -= Math.floor(wallX);
+                            if ( wallX <= worldObject.openAmount){
+                                hit = 0; //Continue raycast for open/opening doors
+                                wallYOffset = 0;
+                            }
+                        } else {
+                            mapX += stepX;
+                            side = 0;
+                            inside =  true;
+                            wallYOffset = 0;
+                            texNum = world.objects[mapY][mapX].texture;
                         }
-                    } else {
-                        mapY += stepY;
-                        side = 1;
-                        inside = true;
-                        wallXOffset = 0;
-                        texNum = world.objects[mapY][mapX].texture;
+                    } else { //side == 0
+                        wallXOffset = 0.5 * stepX;
+                        perpWallDist  = (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
+                        if (sideDistX - (deltaDistX/2) < sideDistY) {
+                            wallX = originPos.y + perpWallDist * rayDirY;
+                            wallX -= Math.floor(wallX);
+                            if ( wallX < worldObject.openAmount) {
+                                hit = 0;
+                                wallXOffset = 0;
+                            }
+                        } else {
+                            mapY += stepY;
+                            side = 1;
+                            inside = true;
+                            wallXOffset = 0;
+                            texNum = world.objects[mapY][mapX].texture;
+                        }
                     }
                 }
             } else {

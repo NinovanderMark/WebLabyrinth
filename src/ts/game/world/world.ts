@@ -63,8 +63,9 @@ export class World {
                             break;
 
                         case "door":
+                            const block = obj["block"] as boolean;
                             const unlockTexture = obj["texture-unlocked"] as number | null;
-                            row.push(new Door(obj["texture"] as number, obj["key"] as string, unlockTexture));
+                            row.push(new Door(obj["texture"] as number, block ?? false, obj["key"] as string, unlockTexture));
                             break;
 
                         case "sprite":
