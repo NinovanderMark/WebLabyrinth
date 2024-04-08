@@ -176,7 +176,7 @@ export class Renderer {
         const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
 
         //calculate height of the sprite on screen
-        const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))) * sprite.scale; //using 'transformY' instead of the real distance prevents fisheye
+        const spriteHeight = Math.abs(Math.floor(this.screenHeight / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
 
         //calculate width of the sprite
         const spriteWidth = Math.abs(Math.floor(this.screenHeight / (transformY))) * sprite.scale;
@@ -199,8 +199,8 @@ export class Renderer {
                 let spriteStartX = Math.min((sprite.sprite * this.texWidth) + texX,(sprite.sprite * this.texWidth) + this.texWidth);
                 spriteStartX = Math.max(spriteStartX, (sprite.sprite * this.texWidth));
 
-                const startY = -((spriteHeight* sprite.scale)/2) + (spriteHeight - (spriteHeight * sprite.scale)) + (this.screenHeight / 2) + pitch;
-                this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight);
+                const startY = -((spriteHeight* sprite.scale)/2) + ((spriteHeight/2) - (spriteHeight * sprite.scale)/2) + (this.screenHeight / 2) + pitch;
+                this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight*sprite.scale);
                 zBuffer[stripe] = transformY;
             }
         }

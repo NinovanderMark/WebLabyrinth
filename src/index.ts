@@ -12,7 +12,7 @@ const height = 768;
 const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 const depth = document.getElementById("depth") as HTMLCanvasElement;
 const parent = document.getElementById("client-parent") as HTMLElement;
-parent.style.width = `${width}px`;
+parent.style.maxWidth = `${width}px`;
 
 const resources = new ResourceResolver(parent);
 const renderer = new Renderer(width, height, resources, canvas, depth);
