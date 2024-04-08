@@ -13,11 +13,12 @@ export class Door extends GameObject implements DynamicObject, Interactable {
     public key: string | null;
     public unlockTexture: number;
 
-    constructor(texture: number, key: string | null = null, unlockTexture: number | null = null) {
+    constructor(texture: number, block: boolean = false, key: string | null = null, unlockTexture: number | null = null) {
         super(texture);
         this.closed = true;
         this.openAmount = 0;
         this.openTime = 0;
+        this.block = block;
         this.key = key;
         this.unlockTexture = unlockTexture ?? texture;
     }
@@ -55,20 +56,22 @@ export class Door extends GameObject implements DynamicObject, Interactable {
     }
 
     public step(delta: number) {
+        const amount = this.block ? delta * 0.2 : delta;
         if ( this.closed && this.openAmount > 0) { 
-            console.log("Closing", this.openAmount);
-            this.openAmount -= delta; 
+            this.openAmount -= amount; 
         }
         if ( !this.closed && this.openAmount < 1) { 
-            console.log("Opening", this.openAmount);
-            this.openAmount += delta; 
+            console.debug('Opening', amount);
+            this.openAmount += amount; 
         }
 
         if ( this.openAmount > 1) { this.openAmount = 1; }
         if ( this.openAmount < 0) { this.openAmount = 0; }
 
         // Automatically start closing the door if it's open for a few seconds
-        if ( this.openAmount === 1) { this.openTime += delta; }
-        if ( this.openTime > 5) { this.closed = true; }
+        if ( !this.block) {
+            if ( this.openAmount === 1) { this.openTime += delta; }
+            if ( this.openTime > 5) { this.closed = true; }
+        }
     }
 }
