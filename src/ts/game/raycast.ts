@@ -4,6 +4,7 @@ import { ViewSprite } from "../presentation/rendering/view-sprite";
 import { Sprite } from "./world/sprite";
 import { Door } from "./world/door";
 import { GameObject } from "./world/game-object";
+import { Portal } from "./world/portal";
 
 export class RayCastResult {
     public sprites: Array<ViewSprite>;
@@ -17,7 +18,8 @@ export class RayCastResult {
 }
 
 export class RayCast {
-    public static ray(originPos: Vector, originDir: Vector, originPlane: Vector, cameraX: number, world: World, stopOnSprite: boolean = false): RayCastResult {
+    public static ray(originPos: Vector, originDir: Vector, originPlane: Vector, cameraX: number, world: World, 
+        stopOnSprite: boolean = false, iteration: number = 0, maxIterations: number = 8): RayCastResult {
         var rayDirX = originDir.x + originPlane.x * cameraX;
         var rayDirY = originDir.y + originPlane.y * cameraX;
 
@@ -153,6 +155,24 @@ export class RayCast {
                         }
                     }
                 }
+            } else if (worldObject instanceof Portal) {
+                const newPos = new Vector(worldObject.targetPosition.x, worldObject.targetPosition.y);
+                const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
+                const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
+                const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
+                const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
+                sprites.forEach(s => castResult.sprites.push(s));
+
+                castResult.direction = new Vector(rayDirX, rayDirY);
+                
+                // Increment raycast result with distance up to the portal
+                if (!castResult.side) {
+                    castResult.perpWallDist+= (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
+                }
+                else {
+                    castResult.perpWallDist+= (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
+                }
+                return castResult;
             } else {
                 texNum = worldObject.texture;
                 hit = 1;

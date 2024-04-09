@@ -27,7 +27,7 @@ export class Player {
     }
 
     rotateBy(degrees: number) {
-        this.direction.rotateBy(degrees);
-        this.plane.rotateBy(degrees);
+        this.direction = this.direction.rotateBy(degrees);
+        this.plane = this.plane.rotateBy(degrees);
     }
 }
