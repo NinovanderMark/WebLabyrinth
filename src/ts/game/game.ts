@@ -128,9 +128,9 @@ export class Game {
 		let rotationOffset = 0;
 		if (nextTile != null ) {
 			if ( nextTile.collidable() ) { return; }
-			if ( currentTile !== nextTile && nextTile instanceof Portal ) {
-				const xOffset = newPlayerPos.x - Math.floor(newPlayerPos.x);
-				const yOffset = newPlayerPos.y - Math.floor(newPlayerPos.y);
+			if ( nextTile instanceof Portal ) {
+				const xOffset = newPlayerPos.x - Math.floor(newPlayerPos.x) + nextTile.targetPortal.targetDirection.x;
+				const yOffset = newPlayerPos.y - Math.floor(newPlayerPos.y) + nextTile.targetPortal.targetDirection.y;
 				newPlayerPos = new Vector(nextTile.targetPosition.x + xOffset, nextTile.targetPosition.y + yOffset);
 				rotationOffset = nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection) - 180;
 			}

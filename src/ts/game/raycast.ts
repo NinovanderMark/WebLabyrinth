@@ -156,7 +156,8 @@ export class RayCast {
                     }
                 }
             } else if (worldObject instanceof Portal) {
-                const newPos = new Vector(worldObject.targetPosition.x, worldObject.targetPosition.y);
+                const posOffset = new Vector(worldObject.targetPortal.targetDirection.x, worldObject.targetPortal.targetDirection.y);
+                const newPos = new Vector(worldObject.targetPosition.x + posOffset.x, worldObject.targetPosition.y + posOffset.y);
                 const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
                 const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
                 const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
@@ -164,7 +165,7 @@ export class RayCast {
                 sprites.forEach(s => castResult.sprites.push(s));
 
                 castResult.direction = new Vector(rayDirX, rayDirY);
-                
+
                 // Increment raycast result with distance up to the portal
                 if (!castResult.side) {
                     castResult.perpWallDist+= (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
