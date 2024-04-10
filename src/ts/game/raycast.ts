@@ -15,6 +15,7 @@ export class RayCastResult {
     public side: number;
     public texture: number;
     public direction: Vector;
+    public wallX: number;
 }
 
 export class RayCast {
@@ -67,7 +68,6 @@ export class RayCast {
         var inside = false
 
         const sprites: Array<ViewSprite> = [];
-        var wallX: number;
         var side: number;
         var texNum: number;
         var worldObject: GameObject;
@@ -121,9 +121,8 @@ export class RayCast {
 
                     if (side == 1) {
                         wallYOffset = 0.5 * stepY;
-                        perpWallDist = (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
                         if (sideDistY - (deltaDistY/2) < sideDistX) { //If ray hits offset wall
-                            wallX = originPos.x + perpWallDist * rayDirX;
+                            let wallX = originPos.x + this.perpendicularDistance(mapY, originPos.y, wallYOffset, stepY, rayDirY) * rayDirX;
                             wallX -= Math.floor(wallX);
                             if ( wallX <= worldObject.openAmount){
                                 hit = 0; //Continue raycast for open/opening doors
@@ -138,9 +137,8 @@ export class RayCast {
                         }
                     } else { //side == 0
                         wallXOffset = 0.5 * stepX;
-                        perpWallDist  = (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
                         if (sideDistX - (deltaDistX/2) < sideDistY) {
-                            wallX = originPos.y + perpWallDist * rayDirY;
+                            let wallX = originPos.y + this.perpendicularDistance(mapX, originPos.x, wallXOffset, stepX, rayDirX) * rayDirY;
                             wallX -= Math.floor(wallX);
                             if ( wallX < worldObject.openAmount) {
                                 hit = 0;
@@ -155,25 +153,6 @@ export class RayCast {
                         }
                     }
                 }
-            } else if (worldObject instanceof Portal) {
-                const posOffset = new Vector(worldObject.targetPortal.targetDirection.x, worldObject.targetPortal.targetDirection.y);
-                const newPos = new Vector(worldObject.targetPosition.x + posOffset.x, worldObject.targetPosition.y + posOffset.y);
-                const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
-                const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
-                const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
-                const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
-                sprites.forEach(s => castResult.sprites.push(s));
-
-                castResult.direction = new Vector(rayDirX, rayDirY);
-
-                // Increment raycast result with distance up to the portal
-                if (!castResult.side) {
-                    castResult.perpWallDist+= (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
-                }
-                else {
-                    castResult.perpWallDist+= (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
-                }
-                return castResult;
             } else {
                 texNum = worldObject.texture;
                 hit = 1;
@@ -181,20 +160,56 @@ export class RayCast {
         }
 
         var perpWallDist;
+        var wallX;
 
-        // Calculate distance projected on camera direction (Euclidean distance will give fisheye effect!)
-        if (side === 0) perpWallDist = (mapX - originPos.x + wallXOffset + (1 - stepX) / 2) / rayDirX;
-        else           perpWallDist = (mapY - originPos.y + wallYOffset + (1 - stepY) / 2) / rayDirY;
+        // Calculate distance projected on camera direction, and the offset from the start of the wall
+        if (side === 0) {
+            perpWallDist = this.perpendicularDistance(mapX, originPos.x, wallXOffset, stepX, rayDirX);
+            wallX = originPos.y + perpWallDist * rayDirY;
+        }
+        else {
+            perpWallDist = this.perpendicularDistance(mapY, originPos.y, wallYOffset, stepY, rayDirY);
+            wallX = originPos.x + perpWallDist * rayDirX;
+        }
 
-            var result = new RayCastResult();
-            result.sprites = sprites;
-            result.hit = hit === 1;
-            result.side = side;
-            result.perpWallDist = perpWallDist;
-            result.inside = inside;
-            result.worldObject = worldObject;
-            result.texture = texNum;
-            result.direction = new Vector(rayDirX, rayDirY);
-            return result;
+        wallX = wallX - Math.floor(wallX);
+
+        // If the ray hit a portal, we cast another ray from the hit location relative to the target portal
+        if (worldObject instanceof Portal) {
+            let newPos = new Vector(worldObject.targetPosition.x, worldObject.targetPosition.y);
+            if ( worldObject.targetPortal.targetDirection.x > 0 || worldObject.targetPortal.targetDirection.y > 0) {
+                newPos = newPos.add(worldObject.targetPortal.targetDirection);
+            }
+
+            if ( side === 1 && rayDirY < 0 ) { newPos.y += wallX; }
+            else if ( side === 1 && rayDirY > 0 ) { newPos.y -= wallX; }
+            else if ( side === 0 && rayDirX < 0 ) { newPos.x += wallX; }
+            else if ( side === 0 && rayDirX > 0 ) { newPos.x -= wallX; }
+
+            const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
+            const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
+            const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
+
+            const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
+            castResult.perpWallDist+= perpWallDist;
+            sprites.forEach(s => castResult.sprites.push(s));
+            return castResult;
+        }
+
+        var result = new RayCastResult();
+        result.sprites = sprites;
+        result.hit = hit === 1;
+        result.side = side;
+        result.perpWallDist = perpWallDist;
+        result.inside = inside;
+        result.worldObject = worldObject;
+        result.texture = texNum;
+        result.direction = new Vector(rayDirX, rayDirY);
+        result.wallX = wallX;
+        return result;
+    }
+
+    private static perpendicularDistance(map: number, pos: number, wallOffset: number, step: number, rayDir: number) {
+        return (map - pos + wallOffset + (1 - step) / 2) / rayDir;
     }
 }
