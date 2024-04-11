@@ -11,6 +11,10 @@ export class Vector {
         return new Vector(this.x + vector.x, this.y + vector.y);
     }
 
+    multiply(scalar: number): Vector {
+        return new Vector(this.x * scalar, this.y * scalar);
+    }
+
     rotateBy(degrees: number): Vector {
         degrees = -degrees * (Math.PI / 180);
         const cos = Math.cos(degrees);

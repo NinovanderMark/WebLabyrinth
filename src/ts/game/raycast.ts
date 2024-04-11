@@ -200,6 +200,11 @@ export class RayCast {
 
             // Translate to exit portal position
             newPos = newPos.add(worldObject.targetPosition);
+            const nudge = worldObject.targetPortal.targetDirection.multiply(0.1);
+            while ( Math.floor(newPos.x) === Math.floor(worldObject.targetPosition.x) &&
+                    Math.floor(newPos.y) === Math.floor(worldObject.targetPosition.y)) {
+                    newPos = newPos.add(nudge);
+            }
 
             const newDir = originDir.rotateBy(angleOffset);
             const newPlane = originPlane.rotateBy(angleOffset);
