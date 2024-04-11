@@ -129,10 +129,17 @@ export class Game {
 		if (nextTile != null ) {
 			if ( nextTile.collidable() ) { return; }
 			if ( nextTile instanceof Portal ) {
-				const xOffset = newPlayerPos.x - Math.floor(newPlayerPos.x) + nextTile.targetPortal.targetDirection.x;
-				const yOffset = newPlayerPos.y - Math.floor(newPlayerPos.y) + nextTile.targetPortal.targetDirection.y;
-				newPlayerPos = new Vector(nextTile.targetPosition.x + xOffset, nextTile.targetPosition.y + yOffset);
-				rotationOffset = nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection) - 180;
+				rotationOffset = -(nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection)-180);
+				const posOffset =
+					new Vector(
+						newPlayerPos.x - Math.floor(newPlayerPos.x),
+						newPlayerPos.y - Math.floor(newPlayerPos.y)
+					)
+					.rotateBy(rotationOffset)
+					.add(nextTile.targetPortal.targetDirection.setLength(1.1))
+					
+				console.log(nextTile.targetPosition.x,nextTile.targetPosition.y); 
+				newPlayerPos = nextTile.targetPosition.add(posOffset)
 			}
 		}
 

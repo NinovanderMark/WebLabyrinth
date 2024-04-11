@@ -176,23 +176,38 @@ export class RayCast {
 
         // If the ray hit a portal, we cast another ray from the hit location relative to the target portal
         if (worldObject instanceof Portal) {
-            let newPos = new Vector(worldObject.targetPosition.x, worldObject.targetPosition.y);
-            if ( worldObject.targetPortal.targetDirection.x > 0 || worldObject.targetPortal.targetDirection.y > 0) {
-                newPos = newPos.add(worldObject.targetPortal.targetDirection);
+            const sign = function(val: number): number {
+                return (val >= 0) ? 1 : -1;
             }
 
-            if ( side === 1 && rayDirY < 0 ) { newPos.y += wallX; }
-            else if ( side === 1 && rayDirY > 0 ) { newPos.y -= wallX; }
-            else if ( side === 0 && rayDirX < 0 ) { newPos.x += wallX; }
-            else if ( side === 0 && rayDirX > 0 ) { newPos.x -= wallX; }
+            const clamp = function(val:number, min: number, max: number): number {
+                return Math.min(Math.max(val, min), max); 
+            }
 
-            const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
-            const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
-            const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
+            const angleOffset = -(worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180);
+            // Convert hit information into vector in entrance portal space
+            let newPos;
+            if (side === 1) { 
+                newPos = new Vector(wallX, clamp(sign(-rayDirY), 0, 0.9999));
+            } else {
+                newPos = new Vector(clamp(sign(-rayDirX), 0, 0.9999), wallX);
+            }
+
+            // Rotate hit vector to exit portal angle
+            newPos = newPos.rotateBy(angleOffset);
+            if (newPos.x < 0) {newPos.x++;}
+            if (newPos.y < 0) {newPos.y++;}
+
+            // Translate to exit portal position
+            newPos = newPos.add(worldObject.targetPosition);
+
+            const newDir = originDir.rotateBy(angleOffset);
+            const newPlane = originPlane.rotateBy(angleOffset);
 
             const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
-            castResult.perpWallDist+= perpWallDist;
+            castResult.perpWallDist += perpWallDist;
             sprites.forEach(s => castResult.sprites.push(s));
+
             return castResult;
         }
 

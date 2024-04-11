@@ -25,6 +25,7 @@ export class Input {
 
     public attachEventListeners(el: HTMLElement) {
         el.addEventListener("keydown", (e: KeyboardEvent) => {
+            e.preventDefault();
             if (e.key === "ArrowLeft") { this.leftPressed = true; };
             if (e.key === "ArrowRight") { this.rightPressed = true; };
             if (e.key === "ArrowUp") { this.upPressed = true; };
@@ -33,6 +34,7 @@ export class Input {
         });
 
         el.addEventListener("keyup", (e: KeyboardEvent) => {
+            e.preventDefault();
             if (e.key === "ArrowLeft") { this.leftPressed = false; };
             if (e.key === "ArrowRight") { this.rightPressed = false; };
             if (e.key === "ArrowUp") { this.upPressed = false; };
