@@ -130,14 +130,17 @@ export class Game {
 			if ( nextTile.collidable() ) { return; }
 			if ( nextTile instanceof Portal ) {
 				rotationOffset = -(nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection)-180);
-				let npOffset = new Vector(
+				newPlayerPos = 
+					new Vector(
 						newPlayerPos.x - Math.floor(newPlayerPos.x),
 						newPlayerPos.y - Math.floor(newPlayerPos.y)
-					).rotateBy(rotationOffset);
-				npOffset.x *= Math.abs(nextTile.targetPortal.targetDirection.y)
-				npOffset.y *= Math.abs(nextTile.targetPortal.targetDirection.x)
+					)
+					.rotateBy(rotationOffset)
+					.add(nextTile.targetPortal.targetDirection);
 
-				newPlayerPos = nextTile.targetPosition.add(npOffset);
+				if (newPlayerPos.x < 0) {newPlayerPos.x++;}
+				if (newPlayerPos.y < 0) {newPlayerPos.y++;}
+				newPlayerPos = newPlayerPos.add(nextTile.targetPosition);
 
 				const nudge = nextTile.targetPortal.targetDirection.multiply(0.1);
 				while (	Math.floor(newPlayerPos.x) === Math.floor(nextTile.targetPosition.x) &&

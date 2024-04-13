@@ -176,30 +176,16 @@ export class RayCast {
 
         // If the ray hit a portal, we cast another ray from the hit location relative to the target portal
         if (worldObject instanceof Portal) {
-            const sign = function(val: number): number {
-                return (val >= 0) ? 1 : -1;
-            }
-
-            const clamp = function(val:number, min: number, max: number): number {
-                return Math.min(Math.max(val, min), max); 
-            }
-
             const angleOffset = -(worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180);
             // Convert hit information into vector in entrance portal space
-            let newPos;
-            if (side === 1) { 
-                newPos = new Vector(wallX, clamp(sign(-rayDirY), 0, 0.9999));
-            } else {
-                newPos = new Vector(clamp(sign(-rayDirX), 0, 0.9999), wallX);
-            }
-
-            // Rotate hit vector to exit portal angle
-            newPos = newPos.rotateBy(angleOffset);
+            let newPos = new Vector(wallX * side, !side ? wallX : 0)
+                        .rotateBy(angleOffset)
+                        .add(worldObject.targetPortal.targetDirection);
             if (newPos.x < 0) {newPos.x++;}
             if (newPos.y < 0) {newPos.y++;}
 
-            // Translate to exit portal position
             newPos = newPos.add(worldObject.targetPosition);
+
             const nudge = worldObject.targetPortal.targetDirection.multiply(0.1);
             while ( Math.floor(newPos.x) === Math.floor(worldObject.targetPosition.x) &&
                     Math.floor(newPos.y) === Math.floor(worldObject.targetPosition.y)) {
