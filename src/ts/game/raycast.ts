@@ -20,7 +20,7 @@ export class RayCastResult {
 
 export class RayCast {
     public static ray(originPos: Vector, originDir: Vector, originPlane: Vector, cameraX: number, world: World, 
-        stopOnSprite: boolean = false, iteration: number = 0, maxIterations: number = 8): RayCastResult {
+        stopOnSprite: boolean = false, startLength: number = 0, maxLength: number = 8192): RayCastResult {
         var rayDirX = originDir.x + originPlane.x * cameraX;
         var rayDirY = originDir.y + originPlane.y * cameraX;
 
@@ -175,7 +175,7 @@ export class RayCast {
         wallX = wallX - Math.floor(wallX);
 
         // If the ray hit a portal, we cast another ray from the hit location relative to the target portal
-        if (worldObject instanceof Portal) {
+        if (worldObject instanceof Portal && perpWallDist + startLength < maxLength) {
             const angleOffset = -(worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180);
             // Convert hit information into vector in entrance portal space
             let newPos = new Vector(wallX * side, !side ? wallX : 0)
@@ -195,8 +195,7 @@ export class RayCast {
             const newDir = originDir.rotateBy(angleOffset);
             const newPlane = originPlane.rotateBy(angleOffset);
 
-            const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
-            castResult.perpWallDist += perpWallDist;
+            const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, perpWallDist + startLength, maxLength);
             sprites.forEach(s => castResult.sprites.push(s));
 
             return castResult;
@@ -206,7 +205,7 @@ export class RayCast {
         result.sprites = sprites;
         result.hit = hit === 1;
         result.side = side;
-        result.perpWallDist = perpWallDist;
+        result.perpWallDist = perpWallDist + startLength;
         result.inside = inside;
         result.worldObject = worldObject;
         result.texture = texNum;
