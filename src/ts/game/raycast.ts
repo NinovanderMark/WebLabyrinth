@@ -93,7 +93,7 @@ export class RayCast {
             if ( worldObject == null) continue;
 
             if ( worldObject instanceof Sprite ) {
-                var viewSprite = new ViewSprite(mapX+0.5, mapY+0.5, worldObject.texture, worldObject.scale);
+                var viewSprite = new ViewSprite((mapX+0.5) - originPos.x, (mapY+0.5) - originPos.y, worldObject.texture, worldObject.scale);
                 if ( sprites.findIndex(v => v.x === viewSprite.x && v.y === viewSprite.y) < 0) {
                     sprites.push(viewSprite);
                 }
@@ -196,7 +196,22 @@ export class RayCast {
             const newPlane = originPlane.rotateBy(angleOffset);
 
             const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, perpWallDist + startLength, maxLength);
-            sprites.forEach(s => castResult.sprites.push(s));
+
+            if ( castResult.sprites.length > 0) {
+                const offset = new Vector(mapX - originPos.x, mapY - originPos.y)
+                        .add(newPos.subtract(worldObject.targetPosition));
+
+                // Reinterpret sprite position for all sprites discovered by the ray               
+                castResult.sprites.forEach(s => {
+                    const spritePos = new Vector(s.x, s.y)
+                        .rotateBy(-angleOffset)
+                        .add(offset);
+
+                    sprites.push(new ViewSprite(spritePos.x, spritePos.y, s.sprite, s.scale));
+                });
+                
+                castResult.sprites = sprites;
+            }
 
             return castResult;
         }

@@ -111,12 +111,14 @@ export class Renderer {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var ray = RayCast.ray(game.player.position, game.player.direction, game.player.plane, cameraX, game.world);
 
-            ray.sprites.forEach(sprite => {
-                if ( sprites.findIndex(s => s.x === sprite.x && s.y === sprite.y && s.sprite === sprite.sprite) < 0) {
-                    sprites.push(sprite);
-                }
-            })
-
+            if ( ray.sprites ) {
+                ray.sprites.forEach(sprite => {
+                    if ( sprites.findIndex(s => s.x === sprite.x && s.y === sprite.y && s.sprite === sprite.sprite) < 0) {
+                        sprites.push(sprite);
+                    }
+                })
+            }
+            
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / ray.perpWallDist);
 
@@ -156,17 +158,24 @@ export class Renderer {
             return b.distanceTo(game.player.position.x, game.player.position.y) - a.distanceTo(game.player.position.x, game.player.position.y);
         });
 
-        sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures));
+        // Draw sprite positions on screen for debug purposes
+        let y = 14;
+        this.drawContext.fillStyle = "#fff";
+        this.drawContext.font = "12px Courier New";
+        this.drawContext.textAlign = "left";
+        
+        sprites.forEach(s => {
+            this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures);
+            this.drawContext.fillText(`${s.x.toFixed(3)},${s.y.toFixed(3)}`, 8, y);
+            y+= 14;
+        });
     }
 
     private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number, texture: HTMLImageElement) {
-        const spriteX = sprite.x - game.player.position.x;
-        const spriteY = sprite.y - game.player.position.y;
-
         const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
 
-        const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
-        const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+        const transformX = invDet * (game.player.direction.y * sprite.x - game.player.direction.x * sprite.y);
+        const transformY = invDet * (-game.player.plane.y * sprite.x + game.player.plane.x * sprite.y); //this is actually the depth inside the screen, that what Z is in 3D
 
         const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
 
