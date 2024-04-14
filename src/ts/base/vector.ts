@@ -11,6 +11,10 @@ export class Vector {
         return new Vector(this.x + vector.x, this.y + vector.y);
     }
 
+    multiply(scalar: number): Vector {
+        return new Vector(this.x * scalar, this.y * scalar);
+    }
+
     rotateBy(degrees: number): Vector {
         degrees = -degrees * (Math.PI / 180);
         const cos = Math.cos(degrees);
@@ -43,17 +47,10 @@ export class Vector {
     }
 
     rotationDiff(vector: Vector): number {
-        const n1 = this.normalize();
-        const n2 = vector.normalize();
-        const dot = n1.dot(n2);
-        const rad = Math.acos(dot);
-        const deg = rad * (180/Math.PI);
-        
-        const cross = n1.cross(n2);
-        if ( cross > 0) {
-            return deg;
-        } else {
-            return 360-deg;
-        }
+        const result =
+            (Math.atan2(this.y, this.x)
+            - Math.atan2(vector.y, vector.x)) 
+            * (180/Math.PI);
+        return result
     }
 }

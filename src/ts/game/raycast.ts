@@ -176,23 +176,29 @@ export class RayCast {
 
         // If the ray hit a portal, we cast another ray from the hit location relative to the target portal
         if (worldObject instanceof Portal) {
-            let newPos = new Vector(worldObject.targetPosition.x, worldObject.targetPosition.y);
-            if ( worldObject.targetPortal.targetDirection.x > 0 || worldObject.targetPortal.targetDirection.y > 0) {
-                newPos = newPos.add(worldObject.targetPortal.targetDirection);
+            const angleOffset = -(worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180);
+            // Convert hit information into vector in entrance portal space
+            let newPos = new Vector(wallX * side, !side ? wallX : 0)
+                        .rotateBy(angleOffset)
+                        .add(worldObject.targetPortal.targetDirection);
+            if (newPos.x < 0) {newPos.x++;}
+            if (newPos.y < 0) {newPos.y++;}
+
+            newPos = newPos.add(worldObject.targetPosition);
+
+            const nudge = worldObject.targetPortal.targetDirection.multiply(0.1);
+            while ( Math.floor(newPos.x) === Math.floor(worldObject.targetPosition.x) &&
+                    Math.floor(newPos.y) === Math.floor(worldObject.targetPosition.y)) {
+                    newPos = newPos.add(nudge);
             }
 
-            if ( side === 1 && rayDirY < 0 ) { newPos.y += wallX; }
-            else if ( side === 1 && rayDirY > 0 ) { newPos.y -= wallX; }
-            else if ( side === 0 && rayDirX < 0 ) { newPos.x += wallX; }
-            else if ( side === 0 && rayDirX > 0 ) { newPos.x -= wallX; }
-
-            const angleOffset = worldObject.targetPortal.targetDirection.rotationDiff(worldObject.targetDirection) - 180;
-            const newDir = originDir.rotateBy(angleOffset).setLength(originDir.magnitude());
-            const newPlane = originPlane.rotateBy(angleOffset).setLength(originPlane.magnitude());
+            const newDir = originDir.rotateBy(angleOffset);
+            const newPlane = originPlane.rotateBy(angleOffset);
 
             const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, iteration+1);
-            castResult.perpWallDist+= perpWallDist;
+            castResult.perpWallDist += perpWallDist;
             sprites.forEach(s => castResult.sprites.push(s));
+
             return castResult;
         }
 

@@ -129,10 +129,24 @@ export class Game {
 		if (nextTile != null ) {
 			if ( nextTile.collidable() ) { return; }
 			if ( nextTile instanceof Portal ) {
-				const xOffset = newPlayerPos.x - Math.floor(newPlayerPos.x) + nextTile.targetPortal.targetDirection.x;
-				const yOffset = newPlayerPos.y - Math.floor(newPlayerPos.y) + nextTile.targetPortal.targetDirection.y;
-				newPlayerPos = new Vector(nextTile.targetPosition.x + xOffset, nextTile.targetPosition.y + yOffset);
-				rotationOffset = nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection) - 180;
+				rotationOffset = -(nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection)-180);
+				newPlayerPos = 
+					new Vector(
+						newPlayerPos.x - Math.floor(newPlayerPos.x),
+						newPlayerPos.y - Math.floor(newPlayerPos.y)
+					)
+					.rotateBy(rotationOffset)
+					.add(nextTile.targetPortal.targetDirection);
+
+				if (newPlayerPos.x < 0) {newPlayerPos.x++;}
+				if (newPlayerPos.y < 0) {newPlayerPos.y++;}
+				newPlayerPos = newPlayerPos.add(nextTile.targetPosition);
+
+				const nudge = nextTile.targetPortal.targetDirection.multiply(0.1);
+				while (	Math.floor(newPlayerPos.x) === Math.floor(nextTile.targetPosition.x) &&
+					Math.floor(newPlayerPos.y) === Math.floor(nextTile.targetPosition.y)) {
+					newPlayerPos = newPlayerPos.add(nudge);
+				}
 			}
 		}
 
