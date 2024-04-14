@@ -124,13 +124,8 @@ export class Renderer {
             const drawStart = -lineHeight / 2 + this.screenHeight / 2 + pitch;
             const drawEnd = lineHeight / 2 + this.screenHeight / 2 + pitch;
 
-            var wallX;
-            if (ray.side == 0) wallX = game.player.position.y + ray.perpWallDist * ray.direction.y;
-            else           wallX = game.player.position.x + ray.perpWallDist * ray.direction.x;
-            wallX -= Math.floor(wallX);
-
             //x coordinate on the texture
-            var texX = wallX * this.texWidth;
+            var texX = ray.wallX * this.texWidth;
             if(ray.side == 0 && ray.direction.x > 0) texX = this.texWidth - texX;
             if(ray.side == 1 && ray.direction.y < 0) texX = this.texWidth - texX;
             

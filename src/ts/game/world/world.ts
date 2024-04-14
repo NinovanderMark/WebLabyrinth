@@ -4,6 +4,8 @@ import { Door } from "./door";
 import { Sprite } from "./sprite";
 import { Room } from "../room/room";
 import { Pickup } from "./pickup";
+import { Portal } from "./portal";
+import { Vector } from "../../base/vector";
 
 export class World {
     public objects: Array<Array<GameObject | null>>;
@@ -48,11 +50,12 @@ export class World {
         world.textures = new URL(`${basePath}/${room.textures}`, url.origin);
         world.sprites = new URL(`${basePath}/${room.sprites}`, url.origin);
 
-		for (let x = 0; x < room.tiles.length; x++) {
+        let portals: Map<number, { portal: Portal, target: number} > = new Map<number, { portal: Portal, target: number}>();
+		for (let y = 0; y < room.tiles.length; y++) {
 			let row: Array<GameObject> = [];
 
-			for (let y = 0; y < room.tiles[x].length; y++) {
-				const tile = room.tiles[x][y]-1;
+			for (let x = 0; x < room.tiles[y].length; x++) {
+				const tile = room.tiles[y][x]-1;
 				if ( tile < 0) {
                     row.push(null);
                 } else {
@@ -60,6 +63,14 @@ export class World {
                     switch (obj.type) {
                         case "block":
                             row.push(new GameObject(obj["texture"] as number));
+                            break;
+
+                        case "portal":
+                            const dir = obj["targetDirection"] as Array<number>;
+                            const target = obj["targetPortal"] as number;
+                            const portal = new Portal(new Vector(x, y), new Vector(dir[0], dir[1]));
+                            row.push(portal);
+                            portals.set(tile+1, { portal: portal, target: target });
                             break;
 
                         case "door":
@@ -82,13 +93,23 @@ export class World {
                             break;
 
                         default:
-                            throw new Error(`Unknown type '${obj.type}' for object ${tile} at ${y},${x}`);
+                            throw new Error(`Unknown type '${obj.type}' for object ${tile} at ${x},${y}`);
                     }
                 }
 			}
 
             world.objects.push(row);
 		}
+
+        // Connect related portals
+        portals.forEach((v,k) => {
+            const target = portals.get(v.target);
+            if ( target == null) {
+                throw new Error(`Unable to find Portal with id ${v.target}`);
+            }
+            
+            v.portal.connect(target.portal);
+        })
 
         world.cacheDynamicObjects();
         return world;

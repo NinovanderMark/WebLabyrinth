@@ -10,6 +10,7 @@ import { Pickup } from "./world/pickup";
 import { GameEventHandler } from "./events/game-event-handler";
 import { GameEvent } from "./events/game-event";
 import { GuiManager } from "../presentation/gui-manager";
+import { Portal } from "./world/portal";
 
 export class Game {
     public world: World;
@@ -114,22 +115,45 @@ export class Game {
 			return;
 		}
 
-		const newPlayerPos = this.player.position.add(movement);
+		let newPlayerPos = this.player.position.add(movement);
 
 		// Out of bounds
 		if (newPlayerPos.y > this.world.objects.length || newPlayerPos.y < 0 || 
 			newPlayerPos.x > this.world.objects[0].length || newPlayerPos.x < 0) {
 			return;
 		}
-		this.currentTileX = Math.floor(newPlayerPos.x);
-		this.currentTileY = Math.floor(newPlayerPos.y);
 
 		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
-		if (currentTile != null && currentTile.collidable()) {
-			return;
+		const nextTile = this.world.objects[Math.floor(newPlayerPos.y)][Math.floor(newPlayerPos.x)];
+		let rotationOffset = 0;
+		if (nextTile != null ) {
+			if ( nextTile.collidable() ) { return; }
+			if ( nextTile instanceof Portal ) {
+				rotationOffset = -(nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection)-180);
+				newPlayerPos = 
+					new Vector(
+						newPlayerPos.x - Math.floor(newPlayerPos.x),
+						newPlayerPos.y - Math.floor(newPlayerPos.y)
+					)
+					.rotateBy(rotationOffset)
+					.add(nextTile.targetPortal.targetDirection);
+
+				if (newPlayerPos.x < 0) {newPlayerPos.x++;}
+				if (newPlayerPos.y < 0) {newPlayerPos.y++;}
+				newPlayerPos = newPlayerPos.add(nextTile.targetPosition);
+
+				const nudge = nextTile.targetPortal.targetDirection.multiply(0.1);
+				while (	Math.floor(newPlayerPos.x) === Math.floor(nextTile.targetPosition.x) &&
+					Math.floor(newPlayerPos.y) === Math.floor(nextTile.targetPosition.y)) {
+					newPlayerPos = newPlayerPos.add(nudge);
+				}
+			}
 		}
 
 		this.player.position = newPlayerPos;
+		this.player.rotateBy(rotationOffset);
+		this.currentTileX = Math.floor(newPlayerPos.x);
+		this.currentTileY = Math.floor(newPlayerPos.y);
 
 		if ( currentTile instanceof Pickup) {
 			currentTile.onPickup(this.player);
