@@ -1,7 +1,7 @@
 ![image](https://github.com/NinovanderMark/WebLabyrinth/assets/6692167/88db6ff1-080b-4462-af8d-3853df899b0a)
 
 # What is Web Labyrinth
-Web Labyrinth is a 3d Raycaster that runs in the browser. It's built using TypeScript and Node.js and heavily inspired by the [Lode Computer Graphics](https://lodev.org/cgtutor/raycasting.html) tutorial on raycasting.
+Web Labyrinth is a 3d Raycaster that runs in the browser. It's built using TypeScript and Node.js and heavily inspired by the [Lode Computer Graphics](https://lodev.org/cgtutor/raycasting.html) tutorial on raycasting, as well as Andrew Mushel's [Javascript implementation](https://github.com/almushel/raycast-demo)
 
 # How do I play this?
 The GitHub pages site for this repository has a playable demo and can be found at http://weblabyrinth.ninovandermark.nl/
