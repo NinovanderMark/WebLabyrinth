@@ -113,7 +113,8 @@ export class Renderer {
 
             if ( ray.sprites ) {
                 ray.sprites.forEach(sprite => {
-                    if ( sprites.findIndex(s => s.x === sprite.x && s.y === sprite.y && s.sprite === sprite.sprite) < 0) {
+                    if ( sprites.findIndex(s => s.x.toFixed(3) === sprite.x.toFixed(3) && 
+                        s.y.toFixed(3) === sprite.y.toFixed(3) && s.sprite === sprite.sprite) < 0) {
                         sprites.push(sprite);
                     }
                 })
