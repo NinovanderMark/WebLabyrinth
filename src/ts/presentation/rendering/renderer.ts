@@ -156,19 +156,16 @@ export class Renderer {
 
         // Sort from farthest to closest
         sprites.sort((a: ViewSprite, b: ViewSprite): number => {
-            return b.distanceTo(game.player.position.x, game.player.position.y) - a.distanceTo(game.player.position.x, game.player.position.y);
+            if ( a.y === b.y) {
+                return Math.abs(a.x) > Math.abs(b.x) ? -1 : 1;
+            } else {
+                return Math.abs(a.y) > Math.abs(b.y) ? -1 : 1;
+            }
         });
-
-        // Draw sprite positions on screen for debug purposes
-        //let y = 14;
-        //this.drawContext.fillStyle = "#fff";
-        //this.drawContext.font = "12px Courier New";
-        //this.drawContext.textAlign = "left";
+        
         
         sprites.forEach(s => {
             this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures);
-            //this.drawContext.fillText(`${s.x.toFixed(3)},${s.y.toFixed(3)}`, 8, y);
-            //y+= 14;
         });
     }
 
@@ -190,6 +187,8 @@ export class Renderer {
         var drawEndX = spriteWidth / 2 + spriteScreenX;
         if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
 
+        const startY = -((spriteHeight* sprite.scale)/2) + ((spriteHeight/2) - (spriteHeight * sprite.scale)/2) + (this.screenHeight / 2) + pitch;
+
         //loop through every vertical stripe of the sprite on screen
         for(var stripe = drawStartX; stripe < drawEndX; stripe++)
         {
@@ -204,7 +203,6 @@ export class Renderer {
                 let spriteStartX = Math.min((sprite.sprite * this.texWidth) + texX,(sprite.sprite * this.texWidth) + this.texWidth);
                 spriteStartX = Math.max(spriteStartX, (sprite.sprite * this.texWidth));
 
-                const startY = -((spriteHeight* sprite.scale)/2) + ((spriteHeight/2) - (spriteHeight * sprite.scale)/2) + (this.screenHeight / 2) + pitch;
                 this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight*sprite.scale);
                 zBuffer[stripe] = transformY;
             }
