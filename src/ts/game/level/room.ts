@@ -1,18 +1,20 @@
 import { RoomObject } from "./room-object";
 
 export class Room {
+    public ceiling: string;
+    public floor: string;
     public objects: Array<RoomObject>;
     public tiles: Array<Array<number>>;
-    public textures: string;
-    public sprites: string;
 
-    public static validate(room: Room) {
-        if ( room.textures == null || room.textures.length < 1) {
-            throw new Error(`Room does not reference a texture file`);
+    public static validate(room: Room): Array<string> {
+        const warnings = new Array<string>();
+
+        if ( room.ceiling == null ) {
+            warnings.push('Ceiling was not specified, using default color');
         }
 
-        if ( room.sprites == null || room.sprites.length < 1) {
-            throw new Error(`Room does not reference a sprites file`);
+        if ( room.floor == null) {
+            warnings.push('Floor was not specified, using default color');
         }
 
         if ( room.objects== null || room.objects.length < 1) {
@@ -36,5 +38,7 @@ export class Room {
                 }
             }
         }
+
+        return warnings;
     }
 }

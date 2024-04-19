@@ -2,20 +2,23 @@ import { GameObject } from "./game-object";
 import { DynamicObject } from "./dynamic-object";
 import { Door } from "./door";
 import { Sprite } from "./sprite";
-import { Room } from "../room/room";
+import { Level } from "../level/level";
+import { Room } from "../level/room";
 import { Pickup } from "./pickup";
 import { Portal } from "./portal";
 import { Vector } from "../../base/vector";
 
 export class World {
+    public name: string;
+    public author: string;
     public objects: Array<Array<GameObject | null>>;
     public items: Map<string, Pickup>;
 
     public textures: URL;
     public sprites: URL;
 
-	public ceiling = 5;
-	public floor = 2;
+	public ceiling: string;
+	public floor: string;
 
     private dynamicObjects: Array<DynamicObject>;
 
@@ -41,14 +44,20 @@ export class World {
         }
     }
 
-    public static from(room: Room, url: URL): World {
+    public static from(level: Level, url: URL): World {
         let pathParts = url.pathname.split('/');
         pathParts.splice(pathParts.length-1, 1);
         const basePath = pathParts.join('/');
 
 		let world = new World();
-        world.textures = new URL(`${basePath}/${room.textures}`, url.origin);
-        world.sprites = new URL(`${basePath}/${room.sprites}`, url.origin);
+        world.name = level.name;
+        world.author = level.author;
+        world.textures = new URL(`${basePath}/${level.resources.textures}`, url.origin);
+        world.sprites = new URL(`${basePath}/${level.resources.sprites}`, url.origin);
+
+        let room = level.room;
+        world.ceiling = room.ceiling != null ? room.ceiling : '#005580';
+        world.floor = room.floor != null ? room.floor : '#2b4000';
 
         let portals: Map<number, { portal: Portal, target: number} > = new Map<number, { portal: Portal, target: number}>();
 		for (let y = 0; y < room.tiles.length; y++) {

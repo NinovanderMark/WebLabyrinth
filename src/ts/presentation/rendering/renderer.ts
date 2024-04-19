@@ -102,12 +102,10 @@ export class Renderer {
 
     private renderCeilingFloor(game: Game) {
         // Temporary implementation
-        var ceilColor = this.getBlockColor(game.world.ceiling);
-        this.drawContext.fillStyle = "hsl(" + ceilColor.hue + "," + ceilColor.saturation + "%," + ceilColor.lightness/2 + "%)";
+        this.drawContext.fillStyle = game.world.ceiling;
         this.drawContext.fillRect(0, 0, this.screenWidth, this.screenHeight/2);
 
-        var floorColor = this.getBlockColor(game.world.floor);
-        this.drawContext.fillStyle = "hsl(" + floorColor.hue + "," + floorColor.saturation + "%," + floorColor.lightness/4 + "%)";
+        this.drawContext.fillStyle = game.world.floor;
         this.drawContext.fillRect(0, this.screenHeight/2, this.screenWidth, this.screenHeight/2);
     }
 

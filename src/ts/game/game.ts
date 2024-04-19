@@ -1,4 +1,4 @@
-import { Room } from "./room/room";
+import { Room } from "./level/room";
 import { Input } from '../presentation/input';
 import { Player } from './player';
 import { Renderer } from '../presentation/rendering/renderer';
@@ -11,6 +11,7 @@ import { GameEventHandler } from "./events/game-event-handler";
 import { GameEvent } from "./events/game-event";
 import { GuiManager } from "../presentation/gui-manager";
 import { Portal } from "./world/portal";
+import { Level } from "./level/level";
 
 export class Game {
     public world: World;
@@ -48,15 +49,23 @@ export class Game {
 		}).then((response) => {
 			if ( response.ok ) {
 				response.json().then(json => {
-					const room = json as Room;
-					Room.validate(room);
-					this.world = World.from(room, url);
+					const level = json as Level;
+					let warnings = Level.validate(level);
+					if ( warnings.length > 0) {
+						console.warn('Warnings were returned during room validation', warnings);
+					}
+
+					if ( level.name != null ) {
+						this.guiManager.enteredLevel(level.name, level.author);						
+					}
+
+					this.world = World.from(level, url);
 					this.tick();
 				})
 			} else {
 				throw new Error(`Unable to retrieve room at URL: ${urlString}`);
 			}
-		})
+		});
 	}
 
 	/**

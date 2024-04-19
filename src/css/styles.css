@@ -30,6 +30,11 @@ canvas {
 	pointer-events: none;
 }
 
+.dialog strong {
+	font-weight: bold;
+	font-size: 140%;
+}
+
 .score {
 	pointer-events: none;
 	position: absolute;

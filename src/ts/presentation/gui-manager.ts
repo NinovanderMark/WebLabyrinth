@@ -21,6 +21,16 @@ export class GuiManager {
         this.parentElement.appendChild(this.scoreElement);
     }
 
+    public enteredLevel(name: string, author: string | null) {
+        document.title = `WebLabyrinth - ${name}`;
+        let message = name;
+        if ( author != null) {
+            message =`<strong>${message}</strong><br>By ${author}`;
+        }
+        
+        this.addDialog(message);
+    }
+
     public addDialog(message: string, sprite: number | null = null, world: World | null = null) {
         if ( this.dialog ) {
             let oldElement = this.dialog.element;
@@ -30,7 +40,7 @@ export class GuiManager {
         const element = document.createElement('div');
         element.classList.add('dialog');
         const text = document.createElement('p');
-        text.innerText = message;
+        text.innerHTML = message;
 
         if ( sprite != null && world != null) {
             element.appendChild(this.createSpriteCanvas(sprite, world));
@@ -44,7 +54,7 @@ export class GuiManager {
     public tick(game: Game, delta: number) {
         if ( this.dialog ) {
             this.dialog.addDelta(delta);
-            if ( this.dialog.alive > 3 ) {
+            if ( this.dialog.alive > 4 ) {
                 this.parentElement.removeChild(this.dialog.element);
                 this.dialog = null;
             }
