@@ -111,12 +111,15 @@ export class Renderer {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var ray = RayCast.ray(game.player.position, game.player.direction, game.player.plane, cameraX, game.world);
 
-            ray.sprites.forEach(sprite => {
-                if ( sprites.findIndex(s => s.x === sprite.x && s.y === sprite.y && s.sprite === sprite.sprite) < 0) {
-                    sprites.push(sprite);
-                }
-            })
-
+            if ( ray.sprites ) {
+                ray.sprites.forEach(sprite => {
+                    if ( sprites.findIndex(s => s.x.toFixed(3) === sprite.x.toFixed(3) && 
+                        s.y.toFixed(3) === sprite.y.toFixed(3) && s.sprite === sprite.sprite) < 0) {
+                        sprites.push(sprite);
+                    }
+                })
+            }
+            
             // Calculate height of line to draw on screen
             var lineHeight = Math.floor(this.screenHeight / ray.perpWallDist);
 
@@ -153,20 +156,24 @@ export class Renderer {
 
         // Sort from farthest to closest
         sprites.sort((a: ViewSprite, b: ViewSprite): number => {
-            return b.distanceTo(game.player.position.x, game.player.position.y) - a.distanceTo(game.player.position.x, game.player.position.y);
+            if ( a.y === b.y) {
+                return Math.abs(a.x) > Math.abs(b.x) ? -1 : 1;
+            } else {
+                return Math.abs(a.y) > Math.abs(b.y) ? -1 : 1;
+            }
         });
-
-        sprites.forEach(s => this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures));
+        
+        
+        sprites.forEach(s => {
+            this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures);
+        });
     }
 
     private renderSpriteBillboard(sprite: ViewSprite, game: Game, zBuffer: Array<number>, pitch: number, texture: HTMLImageElement) {
-        const spriteX = sprite.x - game.player.position.x;
-        const spriteY = sprite.y - game.player.position.y;
-
         const invDet = 1.0 / (game.player.plane.x * game.player.direction.y - game.player.direction.x * game.player.plane.y); //required for correct matrix multiplication
 
-        const transformX = invDet * (game.player.direction.y * spriteX - game.player.direction.x * spriteY);
-        const transformY = invDet * (-game.player.plane.y * spriteX + game.player.plane.x * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+        const transformX = invDet * (game.player.direction.y * sprite.x - game.player.direction.x * sprite.y);
+        const transformY = invDet * (-game.player.plane.y * sprite.x + game.player.plane.x * sprite.y); //this is actually the depth inside the screen, that what Z is in 3D
 
         const spriteScreenX = Math.floor((this.screenWidth / 2) * (1 + transformX / transformY));
 
@@ -179,6 +186,8 @@ export class Renderer {
         if(drawStartX < 0) drawStartX = 0;
         var drawEndX = spriteWidth / 2 + spriteScreenX;
         if(drawEndX >= this.screenWidth) drawEndX = this.screenWidth - 1;
+
+        const startY = -((spriteHeight* sprite.scale)/2) + ((spriteHeight/2) - (spriteHeight * sprite.scale)/2) + (this.screenHeight / 2) + pitch;
 
         //loop through every vertical stripe of the sprite on screen
         for(var stripe = drawStartX; stripe < drawEndX; stripe++)
@@ -194,7 +203,6 @@ export class Renderer {
                 let spriteStartX = Math.min((sprite.sprite * this.texWidth) + texX,(sprite.sprite * this.texWidth) + this.texWidth);
                 spriteStartX = Math.max(spriteStartX, (sprite.sprite * this.texWidth));
 
-                const startY = -((spriteHeight* sprite.scale)/2) + ((spriteHeight/2) - (spriteHeight * sprite.scale)/2) + (this.screenHeight / 2) + pitch;
                 this.drawContext.drawImage(texture, spriteStartX, 0, 1, this.texHeight, stripe, startY, 1, spriteHeight*sprite.scale);
                 zBuffer[stripe] = transformY;
             }
