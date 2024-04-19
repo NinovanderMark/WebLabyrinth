@@ -160,15 +160,15 @@ export class Renderer {
         });
 
         // Draw sprite positions on screen for debug purposes
-        let y = 14;
-        this.drawContext.fillStyle = "#fff";
-        this.drawContext.font = "12px Courier New";
-        this.drawContext.textAlign = "left";
+        //let y = 14;
+        //this.drawContext.fillStyle = "#fff";
+        //this.drawContext.font = "12px Courier New";
+        //this.drawContext.textAlign = "left";
         
         sprites.forEach(s => {
             this.renderSpriteBillboard(s, game, zBuffer, pitch, spriteTextures);
-            this.drawContext.fillText(`${s.x.toFixed(3)},${s.y.toFixed(3)}`, 8, y);
-            y+= 14;
+            //this.drawContext.fillText(`${s.x.toFixed(3)},${s.y.toFixed(3)}`, 8, y);
+            //y+= 14;
         });
     }
 

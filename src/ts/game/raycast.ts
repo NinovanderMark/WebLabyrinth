@@ -198,9 +198,12 @@ export class RayCast {
             const castResult = RayCast.ray(newPos, newDir, newPlane, cameraX, world, stopOnSprite, perpWallDist + startLength, maxLength);
 
             if ( castResult.sprites.length > 0) {
-                const offset = new Vector(mapX - originPos.x, mapY - originPos.y).rotateBy(angleOffset)
-                        .add(newPos.subtract(worldObject.targetPosition))
-                        .add(worldObject.targetDirection.rotateBy(angleOffset))
+                let offset = new Vector(wallX * side, !side ? wallX : 0)
+                        .add(worldObject.targetDirection)
+                if (offset.x < 0) { offset.x++;}
+                if (offset.y < 0) { offset.y++;}
+
+                offset = offset.add(new Vector(mapX - originPos.x, mapY - originPos.y));
 
                 // Reinterpret sprite position for all sprites discovered by the ray from the portal           
                 castResult.sprites.forEach(s => {
