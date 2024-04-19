@@ -8,6 +8,7 @@ export class Player {
     position: Vector;
     direction: Vector;
     plane: Vector;
+    lastItem: number = 0;
     
     constructor(x: number, y: number) {
         this.position = new Vector(x, y);

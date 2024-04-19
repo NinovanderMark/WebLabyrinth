@@ -158,6 +158,7 @@ export class Game {
 		if ( currentTile instanceof Pickup) {
 			currentTile.onPickup(this.player);
 			this.world.objects[this.currentTileY][this.currentTileX] = null;
+			this.player.lastItem = performance.now();
 		}
 	}
 

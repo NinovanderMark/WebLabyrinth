@@ -63,12 +63,22 @@ export class Renderer {
 
         this.renderCeilingFloor(game);
         this.renderWalls(game, textures, sprites);
+        this.renderOverlay(game.player);
 
         if ( this.mapVisible ) {
             this.renderMap(game);
         }
 
         this.renderInterface(game.player, sprites, delta);
+    }
+
+    private renderOverlay(player: Player) {
+        const perf = performance.now()
+        if ( perf - player.lastItem < 500 ) {
+            const factor = (1 - (perf - player.lastItem) / 500)*0.7;
+            this.drawContext.fillStyle = `rgba(255,255,255,${factor})`;
+            this.drawContext.fillRect(0, 0, this.screenWidth, this.screenHeight);
+        }
     }
 
     private renderInterface(player: Player, sprites: HTMLImageElement, delta: number) {
