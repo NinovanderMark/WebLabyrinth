@@ -17,6 +17,12 @@ export class Pickup extends Sprite {
     }
 
     public onPickup(player: Player) {
+        if ( this.name === 'score') {
+            player.score += this.amount;
+            player.scoreItemsFound++;
+            return;
+        }
+
         const existing = player.items.findIndex(i => i.name === this.name);
         if ( existing >= 0)  {
             player.items[existing].amount+=this.amount;

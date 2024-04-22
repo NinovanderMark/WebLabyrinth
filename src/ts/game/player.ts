@@ -9,22 +9,15 @@ export class Player {
     direction: Vector;
     plane: Vector;
     lastItem: number = 0;
+    score: number = 0;
+    
+    secretsFound: number = 0;
+    scoreItemsFound: number = 0;
     
     constructor(x: number, y: number) {
         this.position = new Vector(x, y);
         this.direction = new Vector(0, -1);
         this.plane = new Vector(0.66, 0);
-    }
-
-    get score(): number {
-        let points = 0;
-        this.items.forEach(i => {
-            if ( i.name === 'score') {
-                points+=i.amount;
-            }
-        })
-
-        return points;
     }
 
     rotateBy(degrees: number) {

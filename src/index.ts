@@ -26,4 +26,4 @@ if ( params.get('url') != null) {
     url = params.get('url');
 } 
 
-game.loadRoom(url);
+game.loadLevel(url);

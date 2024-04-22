@@ -25,22 +25,28 @@ export class Input {
 
     public attachEventListeners(el: HTMLElement) {
         el.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.key === "ArrowLeft") { this.leftPressed = true; }
+            else if (e.key === "ArrowRight") { this.rightPressed = true; }
+            else if (e.key === "ArrowUp") { this.upPressed = true; }
+            else if (e.key === "ArrowDown") { this.downPressed = true; }
+            else if (e.key === " " ) {this.usePressed = true;}
+            else { return; }
+
+            // Captured input does not bubble up
             e.preventDefault();
-            if (e.key === "ArrowLeft") { this.leftPressed = true; };
-            if (e.key === "ArrowRight") { this.rightPressed = true; };
-            if (e.key === "ArrowUp") { this.upPressed = true; };
-            if (e.key === "ArrowDown") { this.downPressed = true; };
-            if (e.key === " " ) {this.usePressed = true;}
         });
 
         el.addEventListener("keyup", (e: KeyboardEvent) => {
+            if (e.key === "ArrowLeft") { this.leftPressed = false; }
+            else if (e.key === "ArrowRight") { this.rightPressed = false; }
+            else if (e.key === "ArrowUp") { this.upPressed = false; }
+            else if (e.key === "ArrowDown") { this.downPressed = false; }
+            else if (e.key === " " ) {this.usePressed = false; }
+            else if (e.key.length === 1 ) { this.keyQueue.push(e.key); }
+            else { return; }
+            
+            // Captured input does not bubble up
             e.preventDefault();
-            if (e.key === "ArrowLeft") { this.leftPressed = false; };
-            if (e.key === "ArrowRight") { this.rightPressed = false; };
-            if (e.key === "ArrowUp") { this.upPressed = false; };
-            if (e.key === "ArrowDown") { this.downPressed = false; };
-            if (e.key === " " ) {this.usePressed = false;}
-            if (e.key.length === 1 ) { this.keyQueue.push(e.key); }
         });
 
         el.addEventListener("mousedown", (e: MouseEvent) => {

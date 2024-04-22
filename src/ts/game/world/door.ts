@@ -11,15 +11,17 @@ export class Door extends GameObject implements DynamicObject, Interactable {
     public block: boolean;
     public openTime: number;
     public key: string | null;
+    public secret: boolean;
     public unlockTexture: number;
 
-    constructor(texture: number, block: boolean = false, key: string | null = null, unlockTexture: number | null = null) {
+    constructor(texture: number, block: boolean = false, secret: boolean = false, key: string | null = null, unlockTexture: number | null = null) {
         super(texture);
         this.closed = true;
         this.openAmount = 0;
         this.openTime = 0;
         this.block = block;
         this.key = key;
+        this.secret = secret;
         this.unlockTexture = unlockTexture ?? texture;
     }
 
@@ -48,8 +50,13 @@ export class Door extends GameObject implements DynamicObject, Interactable {
         }
 
         if ( this.closed && this.openAmount === 0 ) {
-           this.closed = false;
-           this.openTime = 0;
+            this.closed = false;
+            this.openTime = 0;
+            
+            if ( this.secret === true) {
+                game.player.secretsFound++;
+                this.secret = false;
+            }
         } else if ( !this.closed && this.openAmount === 1) {
             this.closed = true;
         }

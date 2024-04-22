@@ -3,6 +3,7 @@ import { RoomObject } from "./room-object";
 export class Room {
     public ceiling: string;
     public floor: string;
+    public player: Array<number>;
     public objects: Array<RoomObject>;
     public tiles: Array<Array<number>>;
 
@@ -17,7 +18,15 @@ export class Room {
             warnings.push('Floor was not specified, using default color');
         }
 
-        if ( room.objects== null || room.objects.length < 1) {
+        if ( room.player == null) {
+            throw new Error('Room contains no player starting position and orientation');
+        }
+
+        if ( room.player.length !== 3) {
+            throw new Error(`Room player position and orientation expects 3 arguments, found ${room.player.length}`);
+        }
+
+        if ( room.objects == null || room.objects.length < 1) {
             throw new Error(`Room contains no objects`);
         }
 

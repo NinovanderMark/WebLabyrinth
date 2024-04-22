@@ -1,13 +1,14 @@
-export class Dialog {
+import {Panel} from "./panel";
+
+export class Dialog extends Panel {
     public message: string;
     public sprite: number | null;
     public alive: number;
-    public element: HTMLElement;
 
     constructor(message: string, element: HTMLElement, sprite: number | null = null) {
+        super(element);
         this.message = message;
         this.sprite = sprite;
-        this.element = element;
         this.alive = 0;
     }
 

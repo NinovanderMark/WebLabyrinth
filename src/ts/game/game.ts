@@ -12,6 +12,7 @@ import { GameEvent } from "./events/game-event";
 import { GuiManager } from "../presentation/gui-manager";
 import { Portal } from "./world/portal";
 import { Level } from "./level/level";
+import { Exit } from "./world/exit";
 
 export class Game {
     public world: World;
@@ -23,6 +24,7 @@ export class Game {
 	events: Array<GameEvent>;
 	handler: GameEventHandler;
 	
+	paused = false;
 	currentTileX = 0;
 	currentTileY = 0;
 
@@ -39,7 +41,7 @@ export class Game {
 		this.events = new Array<GameEvent>();
 	}
 
-	public loadRoom(urlString: string) {
+	public loadLevel(urlString: string) {
 		const url = new URL(urlString);
 		console.log('Loading new room from URL', url.href);
 
@@ -59,8 +61,7 @@ export class Game {
 						this.guiManager.enteredLevel(level.name, level.author);						
 					}
 
-					this.world = World.from(level, url);
-					this.tick();
+					this.initialize(World.from(level, url));
 				})
 			} else {
 				throw new Error(`Unable to retrieve room at URL: ${urlString}`);
@@ -69,9 +70,32 @@ export class Game {
 	}
 
 	/**
+	 * Initializes the game instance with the specified world
+	 * @param world 
+	 */
+	public initialize(world: World) {
+		this.world = world;
+		let oldScore = this.player.score;
+		this.player = new Player(world.playerStart.x, world.playerStart.y);
+		this.player.rotateBy(world.playerRotation);
+		this.player.score = oldScore;
+		this.paused = false;
+		this.tick();
+	}
+
+	public levelEnd(nextLevel: string | null) {
+		this.paused = true;
+		this.guiManager.createEndScreen(this, nextLevel);
+	}
+
+	/**
 	 * Progresses the game by 1 step, and schedules the next step
 	 */
 	public tick() {
+		if ( this.paused ) {
+			return;
+		}
+
 		if (this.previousTime=== 0 ) {
 			this.previousTime = performance.now();
 		} else {
@@ -83,6 +107,7 @@ export class Game {
 		const delta = (this.currentTime - this.previousTime)/1000;
 		this.gameStep(delta);
 		this.world.step(delta);
+
 		this.renderer.render(this, delta);
 		this.guiManager.tick(this, delta);
 
@@ -105,11 +130,11 @@ export class Game {
 			this.input.clearQueue();
 		}
 
-		// Interact with doors
+		// Interact with objects in the world
 		if ( this.input.usePressed || this.input.leftMouseUp ) {
 			const ray = RayCast.ray(this.player.position, this.player.direction, this.player.plane, 0, this.world);
 			if ( ray.hit && ray.perpWallDist < 2 ) {
-				if ( ray.worldObject instanceof Door) {
+				if ( ray.worldObject instanceof Door || ray.worldObject instanceof Exit) {
 					ray.worldObject.interact(this);
 				}
 			} 
