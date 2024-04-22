@@ -16,6 +16,7 @@ export class RayCastResult {
     public texture: number;
     public direction: Vector;
     public wallX: number;
+    public tilesPassed: Array<Vector>;
 }
 
 export class RayCast {
@@ -67,6 +68,7 @@ export class RayCast {
         var wallYOffset = 0;
         var inside = false
 
+        const passed: Array<Vector> = [];
         const sprites: Array<ViewSprite> = [];
         var side: number;
         var texNum: number;
@@ -88,12 +90,18 @@ export class RayCast {
                 mapY += stepY;
                 side = 1;
             }
+
+            passed.push(new Vector(mapX, mapY)); // Store the tile the ray passed
+
             // Check if ray has hit a wall
-            worldObject = world.objects[mapY][mapX];
-            if ( worldObject == null) continue;
+            if ( world.objects[mapY][mapX] instanceof GameObject) { 
+                worldObject = world.objects[mapY][mapX] as GameObject;
+            } else { 
+                continue; 
+            }
 
             if ( worldObject instanceof Sprite ) {
-                var viewSprite = new ViewSprite((mapX+0.5) - originPos.x, (mapY+0.5) - originPos.y, worldObject.texture, worldObject.scale);
+                var viewSprite = new ViewSprite((mapX+0.5) - originPos.x, (mapY+0.5) - originPos.y, worldObject.texture, worldObject, worldObject.scale);
                 if ( sprites.findIndex(v => v.x === viewSprite.x && v.y === viewSprite.y) < 0) {
                     sprites.push(viewSprite);
                 }
@@ -133,7 +141,7 @@ export class RayCast {
                             side = 0;
                             inside =  true;
                             wallYOffset = 0;
-                            texNum = world.objects[mapY][mapX].texture;
+                            texNum = (world.objects[mapY][mapX] as GameObject).texture;
                         }
                     } else { //side == 0
                         wallXOffset = 0.5 * stepX;
@@ -149,7 +157,7 @@ export class RayCast {
                             side = 1;
                             inside = true;
                             wallXOffset = 0;
-                            texNum = world.objects[mapY][mapX].texture;
+                            texNum = (world.objects[mapY][mapX] as GameObject).texture;
                         }
                     }
                 }
@@ -211,10 +219,11 @@ export class RayCast {
                         .rotateBy(-angleOffset)
                         .add(offset);
 
-                    sprites.push(new ViewSprite(spritePos.x, spritePos.y, s.sprite, s.scale));
+                    sprites.push(new ViewSprite(spritePos.x, spritePos.y, s.sprite, s.gameObject, s.scale));
                 });
                 
                 castResult.sprites = sprites;
+                castResult.tilesPassed = castResult.tilesPassed.concat(passed);
             }
 
             return castResult;
@@ -230,6 +239,7 @@ export class RayCast {
         result.texture = texNum;
         result.direction = new Vector(rayDirX, rayDirY);
         result.wallX = wallX;
+        result.tilesPassed = passed;
         return result;
     }
 

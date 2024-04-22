@@ -13,6 +13,7 @@ import { GuiManager } from "../presentation/gui-manager";
 import { Portal } from "./world/portal";
 import { Level } from "./level/level";
 import { Exit } from "./world/exit";
+import { GameObject } from "./world/game-object";
 
 export class Game {
     public world: World;
@@ -160,7 +161,7 @@ export class Game {
 		const currentTile = this.world.objects[this.currentTileY][this.currentTileX];
 		const nextTile = this.world.objects[Math.floor(newPlayerPos.y)][Math.floor(newPlayerPos.x)];
 		let rotationOffset = 0;
-		if (nextTile != null ) {
+		if (nextTile instanceof GameObject ) {
 			if ( nextTile.collidable() ) { return; }
 			if ( nextTile instanceof Portal ) {
 				rotationOffset = -(nextTile.targetPortal.targetDirection.rotationDiff(nextTile.targetDirection)-180);

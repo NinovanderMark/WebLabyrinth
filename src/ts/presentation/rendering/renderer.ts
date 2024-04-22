@@ -118,12 +118,20 @@ export class Renderer {
         for(var x = 0; x < this.screenWidth; x++) {
             var cameraX = 2 * x / this.screenWidth - 1; // X coordinate in camera space
             var ray = RayCast.ray(game.player.position, game.player.direction, game.player.plane, cameraX, game.world);
+            
+            ray.worldObject.seen = true;
+            ray.tilesPassed.forEach(t => {
+                if ( !(game.world.objects[t.y][t.x] instanceof GameObject)) {
+                    game.world.objects[t.y][t.x] = true;
+                }
+            });
 
             if ( ray.sprites ) {
                 ray.sprites.forEach(sprite => {
                     if ( sprites.findIndex(s => s.x.toFixed(3) === sprite.x.toFixed(3) && 
                         s.y.toFixed(3) === sprite.y.toFixed(3) && s.sprite === sprite.sprite) < 0) {
-                        sprites.push(sprite);
+                            sprite.gameObject.seen = true;
+                            sprites.push(sprite);
                     }
                 })
             }
@@ -223,22 +231,36 @@ export class Renderer {
         for (var y = 0; y < game.world.objects.length; y++) {
             for (var x = 0; x < game.world.objects[y].length; x++) {
                 const obj = game.world.objects[y][x];
-                if ( obj == null) continue;
+                if ( ( !(obj instanceof GameObject) && obj === false) || (obj instanceof GameObject && !obj.seen)) { continue; }
 
-                var color = this.getBlockColor(obj.texture+1);
+                var color: Color;
+                if ( obj instanceof GameObject) { color = this.getBlockColor(obj.texture+1) }
+                else { 
+                    color = new Color(0, 0, 0);
+                }
+
                 this.drawContext.fillStyle = "hsl(" + color.hue + "," + color.saturation + "%," + color.lightness + "%)";
+
                 if ( obj instanceof Sprite ) {
-                    this.drawContext.strokeStyle = '#f77';
-                    this.drawCircle((x+0.5)*blockSize, (y+0.5)*blockSize, blockSize/2);
-                } else if ( obj instanceof Door && !obj.block) {
-                    var neighbour: GameObject;
+                    this.drawContext.fillStyle = '#000';
+                    this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
+
+                    if ( obj.collidable()) {
+                        this.drawContext.strokeStyle = '#f77';
+                        this.drawCircle((x+0.5)*blockSize, (y+0.5)*blockSize, blockSize/2);
+                    }
+                } else if ( obj instanceof Door && !obj.block ) {
+                    var neighbour: GameObject | boolean;
                     if ( x > 0) {
                         neighbour = game.world.objects[y][x-1];
                     } else {
                         neighbour = game.world.objects[y][x+1];
                     }
-                    if ( neighbour == null ) { this.drawContext.fillRect((x+0.25)*blockSize, y*blockSize, blockSize/2, blockSize); }
-                    else { this.drawContext.fillRect(x*blockSize, (y+0.25)*blockSize, blockSize, blockSize/2); }
+                    if ( neighbour instanceof GameObject ) { this.drawContext.fillRect(x*blockSize, (y+0.25)*blockSize, blockSize, blockSize/2); }
+                    else { this.drawContext.fillRect((x+0.25)*blockSize, y*blockSize, blockSize/2, blockSize); }
+                } else if ( obj instanceof Door && obj.block && !obj.closed) {
+                    this.drawContext.fillStyle = "#000";
+                    this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 } else {
                     this.drawContext.fillRect(x*blockSize, y*blockSize, blockSize, blockSize);
                 }

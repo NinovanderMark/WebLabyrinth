@@ -12,7 +12,7 @@ export class World {
     public name: string;
     public author: string;
     public url: URL;
-    public objects: Array<Array<GameObject | null>>;
+    public objects: Array<Array<GameObject | boolean>>;
     public items: Map<string, Pickup>;
     
     public playerStart: Vector;
@@ -69,12 +69,12 @@ export class World {
 
         let portals: Map<number, { portal: Portal, target: number} > = new Map<number, { portal: Portal, target: number}>();
 		for (let y = 0; y < room.tiles.length; y++) {
-			let row: Array<GameObject> = [];
+			let row: Array<GameObject | boolean> = [];
 
 			for (let x = 0; x < room.tiles[y].length; x++) {
 				const tile = room.tiles[y][x]-1;
 				if ( tile < 0) {
-                    row.push(null);
+                    row.push(false);
                 } else {
                     const obj = room.objects[tile];
                     switch (obj.type) {
