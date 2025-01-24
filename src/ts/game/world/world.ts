@@ -23,6 +23,10 @@ export class World {
     public textures: URL;
     public sprites: URL;
 
+    public minimapAllowed: boolean;
+    public displayScore: boolean;
+    public resetScore: boolean;
+
     private dynamicObjects: Array<DynamicObject>;
     public scoreItems: number = 0;
     public secrets: number = 0;
@@ -61,6 +65,11 @@ export class World {
         world.textures = new URL(`${basePath}/${level.resources.textures}`, url.origin);
         world.sprites = new URL(`${basePath}/${level.resources.sprites}`, url.origin);
 
+        // Rules
+        world.minimapAllowed = level.rules?.allowMinimap ?? true;
+        world.displayScore = level.rules?.displayScore ?? true;
+        world.resetScore = level.rules?.resetScore ?? false;
+
         let room = level.room;
         world.ceiling = room.ceiling != null ? room.ceiling : '#005580';
         world.floor = room.floor != null ? room.floor : '#2b4000';
@@ -98,14 +107,15 @@ export class World {
                             break;
 
                         case "sprite":
-                            row.push(new Sprite(obj["texture"] as number));
+                            const spriteScale = obj["scale"] as number;
+                            row.push(new Sprite(obj["texture"] as number, spriteScale ?? 1));
                             break;
 
                         case "item":
-                            const scale = obj["scale"] as number;
+                            const itemScale = obj["scale"] as number;
                             const amount = obj["amount"] as number;
                             const name = obj["name"];
-                            const pickup = new Pickup(obj["texture"] as number, name, amount ?? 1, scale ?? 1);
+                            const pickup = new Pickup(obj["texture"] as number, name, amount ?? 1, itemScale ?? 1);
                             row.push(pickup);
                             world.items.set(name, pickup);
                             break;

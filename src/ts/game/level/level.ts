@@ -1,3 +1,4 @@
+import { Rules } from "./rules";
 import { Resources } from "./resources";
 import { Room } from "./room";
 
@@ -9,6 +10,7 @@ export class Level {
     public format: string;
     public resources: Resources;
     public room: Room;
+    public rules: Rules;
 
     public static validate(level: Level): Array<string> {
         let warnings = new Array<string>();
@@ -26,7 +28,6 @@ export class Level {
         } else if ( level.format !== this.supportedFormat) {
             warnings.push(`Provided file format of '${level.format}' does not match expected format of ${this.supportedFormat}`);
         }
-
         if ( level.resources == null) {
             throw new Error('No resource data was specified');
         }
@@ -37,6 +38,13 @@ export class Level {
 
         warnings = warnings.concat(Resources.validate(level.resources));
         warnings = warnings.concat(Room.validate(level.room));
+
+        if ( level.rules == null) {
+            warnings.push('No rules data was specified');
+        } else {
+            warnings = warnings.concat(Rules.validate(level.rules));
+        }
+
         return warnings;
     }
 }

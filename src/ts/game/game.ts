@@ -77,10 +77,21 @@ export class Game {
 	public initialize(world: World) {
 		this.world = world;
 		let oldScore = this.player.score;
-		this.player = new Player(world.playerStart.x, world.playerStart.y);
-		this.player.rotateBy(world.playerRotation);
+		this.player = new Player(world.playerStart.x + 0.5, world.playerStart.y + 0.5);
+		this.player.rotateBy(-world.playerRotation);
 		this.player.score = oldScore;
 		this.paused = false;
+
+		// Parse the rules
+		this.guiManager.setScoreVisibility(world.displayScore);
+		if ( !world.minimapAllowed) {
+			this.renderer.mapVisible = false;
+		}
+		
+		if ( world.resetScore) {
+			this.player.score = 0;
+		}
+
 		this.tick();
 	}
 
@@ -125,7 +136,9 @@ export class Game {
 	private gameStep(delta: number) {
 		if ( this.input.keyQueue.length > 0) {
 			if ( this.input.keyQueue.find((k) => k === 'm') != null) {
-				this.renderer.toggleMap();
+				if  ( this.world.minimapAllowed ) {
+					this.renderer.toggleMap();
+				}
 			}
 
 			this.input.clearQueue();

@@ -32,6 +32,14 @@ export class GuiManager {
         this.addDialog(message);
     }
 
+    public setScoreVisibility(visible: boolean) {
+        if ( visible && this.scoreElement.classList.contains('hidden')) {
+            this.scoreElement.classList.remove('hidden');
+        } else if ( !visible && !this.scoreElement.classList.contains('hidden')) {
+            this.scoreElement.classList.add('hidden');
+        }
+    }
+
     public addDialog(message: string, sprite: number | null = null, world: World | null = null) {
         if ( this.panel ) {
             let oldElement = this.panel.element;
