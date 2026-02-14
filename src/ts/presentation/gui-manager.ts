@@ -96,9 +96,10 @@ export class GuiManager {
 
         const scoreTable = document.createElement('table');
         scoreTable.classList.add('stats');
-        const scoreRow = game.world.scoreItems > 0 ? `<tr><td>Score</td><td>${(game.player.scoreItemsFound / game.world.scoreItems )*100}%</td></tr>` : '';
+        const treasureRow = game.world.scoreItems > 0 ? `<tr><td>Treasures</td><td>${(game.player.scoreItemsFound / game.world.scoreItems )*100}%</td></tr>` : '';
         const secretRow = game.world.secrets > 0 ? `<tr><td>Secrets</td><td>${(game.player.secretsFound / game.world.secrets)*100}%</td></tr>` : '';
-        scoreTable.innerHTML = `<tbody>${scoreRow}${secretRow}</tbody>`;
+        const scoreRow = game.player.score > 0 || game.world.scoreItems > 0 ? `<tr><td>Total Score</td><td>${game.player.score}</td></tr>` : '';
+        scoreTable.innerHTML = `<tbody>${treasureRow}${secretRow}${scoreRow}</tbody>`;
         element.appendChild(scoreTable);
         
         const button = document.createElement('button');

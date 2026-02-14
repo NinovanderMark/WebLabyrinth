@@ -43,8 +43,18 @@ export class Game {
 	}
 
 	public loadLevel(urlString: string) {
-		const url = new URL(urlString);
-		console.log('Loading new room from URL', url.href);
+		var url: URL;
+		if ( urlString.startsWith('http://') || urlString.startsWith('https://')) {
+			url = new URL(urlString);
+		} else {
+			var baseUrl = this.world?.url ?? new URL(document.baseURI);
+			var pathParts = baseUrl.pathname.split('/');
+			pathParts.splice(pathParts.length-1, 1);
+			const newPath = pathParts.join('/') + "/" + urlString;
+			url = new URL(baseUrl.origin + newPath);
+		}
+
+		console.log('Loading new level from URL', url);
 
 		fetch(url.href, {
 			method: 'get',
@@ -55,7 +65,7 @@ export class Game {
 					const level = json as Level;
 					let warnings = Level.validate(level);
 					if ( warnings.length > 0) {
-						console.warn('Warnings were returned during room validation', warnings);
+						console.warn('Warnings were returned during level validation', warnings);
 					}
 
 					if ( level.name != null ) {
@@ -65,7 +75,7 @@ export class Game {
 					this.initialize(World.from(level, url));
 				})
 			} else {
-				throw new Error(`Unable to retrieve room at URL: ${urlString}`);
+				throw new Error(`Unable to retrieve level: ${urlString}`);
 			}
 		});
 	}
